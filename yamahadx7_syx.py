@@ -6,280 +6,310 @@ LFOWaves = {0: "Triangle", 1: "Sawtooth Down", 2: "Sawtooth Up", 3: "Square", 4:
 Notes = {0 : "C", 1 : "C#", 2 : "D", 3 : "D#", 4 : "E", 5 : "F", 6 : "F#", 7 : "G", 8 : "G#", 9 : "A", 10 : "A#", 11 : "B"}
 OscillatorMode = {0 : "Frequency (Ratio)", 1 : "Fixed Frequency (Hz)"}
 
-class YamahaDX7Patch(object):
+##################################################################################################################################
 
-   ##################################################################################################################################
-   class Operator():
-       def __init__(self, data, index):
-           self.index = index
-           self.data = data
+class Operator(object):
 
-           self.EG_R1 = int(binascii.hexlify(data[0]), 16)
-           self.EG_R2= int(binascii.hexlify(data[1]), 16)
-           self.EG_R3= int(binascii.hexlify(data[2]), 16)
-           self.EG_R4= int(binascii.hexlify(data[3]), 16)
-           self.EG_L1= int(binascii.hexlify(data[4]), 16)
-           self.EG_L2= int(binascii.hexlify(data[5]), 16)
-           self.EG_L3= int(binascii.hexlify(data[6]), 16)
-           self.EG_L4= int(binascii.hexlify(data[7]), 16)
+    def __init__(self, data, index):
+        assert(len(data) == 17)
+        self.index = index
+        self.data = data
 
-           # DEL BELOW
-           self.levelScalingBreakPoint = data[8]
-           self.scaleLeftDepth = data[9]
-           self.scaleRightDepth = data[10]
+    def get_EG_R1(self):
+        return int(binascii.hexlify(self.data[0]), 16) 
+    def get_EG_R2(self):
+        return int(binascii.hexlify(self.data[1]), 16) 
+    def get_EG_R3(self):
+        return int(binascii.hexlify(self.data[2]), 16) 
+    def get_EG_R4(self):
+        return int(binascii.hexlify(self.data[3]), 16) 
+    def get_EG_L1(self):
+        return int(binascii.hexlify(self.data[4]), 16) 
+    def get_EG_L2(self):
+        return int(binascii.hexlify(self.data[5]), 16) 
+    def get_EG_L3(self):
+        return int(binascii.hexlify(self.data[6]), 16) 
+    def get_EG_L4(self):
+        return int(binascii.hexlify(self.data[7]), 16) 
 
-           self.scaleCurve = data[11] 
+#### FIXME BELOW   WHAT ARE THEY, WHERE DID YOU GET THIS INFO
+    def get_levelScalingBreakPoint(self):
+        return int(binascii.hexlify(self.data[8]), 16) 
+    def get_scaleLeftDepth(self):
+        return int(binascii.hexlify(self.data[9]), 16) 
+    def get_scaleRightDepth(self):
+        return int(binascii.hexlify(self.data[10]), 16) 
+    def get_scaleCurve(self):
+        return int(binascii.hexlify(self.data[11]), 16) 
+    def get_rateScaleDetune(self):
+        return int(binascii.hexlify(self.data[12]), 16) 
+    def get_sensitivity(self):
+        return int(binascii.hexlify(self.data[13]), 16) 
+    def get_outputLevel(self):
+        return int(binascii.hexlify(self.data[14]), 16) 
+    def get_oscillatorModeFreq(self):
+        return int(binascii.hexlify(self.data[15]), 16) 
+    def get_frequencyFine(self):
+        return int(binascii.hexlify(self.data[16]), 16) 
+#### FIXME ABOVE
 
-           self.rateScaleDetune = data[12] 
-
-           self.sensitivity = data[13]
-           self.outputLevel= data[14]
-
-           self.oscillatorModeFreq = data[15]
-           self.frequencyFine = data[16]
-           # DEL ABOVE
-
-           self.AMsens = int(binascii.hexlify(data[13]), 16) & 0x3
-           self.oscillmode = int(binascii.hexlify(data[15]), 16) & 0x1
-           self.frequencyCoarse = (int(binascii.hexlify(data[15]), 16) & 0x3E) >> 1 
-           self.frequencyFine = int(binascii.hexlify(data[16]), 16)
-           self.detune = (int(binascii.hexlify(data[12]), 16) & 0x78) >> 3 
-
-           # FIX ME, to do:
-           # Verify self.toByteArray() works:
-           # testdata = self.toByteArray()
-           # testdata == data ??
-
-
-       def dump(self):
-           s = ""
-           s += "  Operator number: %d\n"%(self.index + 1)
-           s += "    AM Sensitivity: %d\n"%(self.AMsens)
-           s += "    Oscillator Mode: %s\n"%(OscillatorMode.get(self.oscillmode, "Unknown oscillator mode type"))
-           s += "    Frequency: %.2f\n"%(self.getFrequency())
-           s += "    Detune: %d\n"%(self.detune - 7)
-           s += "    Envelope Generator\n"
-           s += "      Rate 1: %d\n"%(self.EG_R1)
-           s += "      Rate 2: %d\n"%(self.EG_R2)
-           s += "      Rate 3: %d\n"%(self.EG_R3)
-           s += "      Rate 4: %d\n"%(self.EG_R4)
-           s += "      Level 1: %d\n"%(self.EG_L1)
-           s += "      Level 2: %d\n"%(self.EG_L2)
-           s += "      Level 3: %d\n"%(self.EG_L3)
-           s += "      Level 4: %d\n"%(self.EG_L4)
-           s += "    Keyboard Level Scaling\n"
-           return s
-
-
-       def getFrequency(self):
-           if self.oscillmode == 0:
-               coarse = float(self.frequencyCoarse)
-               if (coarse == 0):
-                   coarse = 0.5
-               freq = coarse + (float(self.frequencyFine) * coarse / 100)
-           elif self.oscillmode == 1:
-               power = float(self.frequencyCoarse % 4) + (float(self.frequencyFine) / 100)
-               freq = pow(10, power) 
-           else:
-               return -1
-           return freq
+    def get_AMsens(self):
+        return int(binascii.hexlify(self.data[13]), 16) & 0x3
+    def get_oscillmode(self):
+        return int(binascii.hexlify(self.data[15]), 16) & 0x1
+    def get_frequencyCoarse(self):
+        return (int(binascii.hexlify(self.data[15]), 16) & 0x3E) >> 1 
+    def get_frequencyFine(self):
+        return int(binascii.hexlify(self.data[16]), 16)
+    def get_detune(self):
+        return (int(binascii.hexlify(self.data[12]), 16) & 0x78) >> 3 
 
 
 
-          # // If ratio mode
-          #  if (op.oscillatorMode == 0)
-          #  {
-          #      double coarse = op.frequencyCoarse;
-          #      if (coarse == 0)
-          #          coarse = .5;
-
-#                const double freq = coarse + 
- #                   ((double)op.frequencyFine * coarse / 100);
-  #              
-   #             printf("  Frequency: %g\n", freq);
-    #        }
-     #       else  // fixed mode
-      #      {
-       #         const double power = (double)(op.frequencyCoarse % 4) +
-        #                             (double)op.frequencyFine / 100;
-         #       const double f = pow(10, power);
-          #      printf("  Frequency: %gHz\n", f);
-           # }
-
-       
-       def toByteArray(self):
-           return
-           # FIX ME, to do:
-           # data = byte_array[0:16] , or however many bytes
-           # data[0] = to_unsigned_hex(self.EG_R1)
-           # ... etc
-           # return data
-           # 
-           
-  
-
-   ##################################################################################################################################
+    def prettyPrint(self):
+        s = ""
+        s += "  Operator number: %d\n"%(self.index + 1)
+        s += "    AM Sensitivity: %d\n"%(self.get_AMsens())
+        s += "    Oscillator Mode: %s\n"%(OscillatorMode.get(self.get_oscillmode(), "Unknown oscillator mode type"))
+        s += "    Frequency: %.2f\n"%(self.getFrequency())
+        s += "    Detune: %d\n"%(self.get_detune() - 7)
+        s += "    Envelope Generator\n"
+        s += "      Rate 1: %d\n"%(self.get_EG_R1())
+        s += "      Rate 2: %d\n"%(self.get_EG_R2())
+        s += "      Rate 3: %d\n"%(self.get_EG_R3())
+        s += "      Rate 4: %d\n"%(self.get_EG_R4())
+        s += "      Level 1: %d\n"%(self.get_EG_L1())
+        s += "      Level 2: %d\n"%(self.get_EG_L2())
+        s += "      Level 3: %d\n"%(self.get_EG_L3())
+        s += "      Level 4: %d\n"%(self.get_EG_L4())
+        s += "    Keyboard Level Scaling\n"
+        return s
 
 
-   def __str__(self):
-        return self.name
+    def getFrequency(self):
+        if self.get_oscillmode() == 0:
+            coarse = float(self.get_frequencyCoarse())
+            if (coarse == 0):
+                coarse = 0.5
+            freq = coarse + (float(self.get_frequencyFine()) * coarse / 100)
+        elif self.get_oscillmode() == 1:
+            power = float(self.get_frequencyCoarse() % 4) + (float(self.get_frequencyFine()) / 100)
+            freq = pow(10, power) 
+        else:
+            return -1
+        return freq
 
+
+    # DUMP AS BINARY
+    def dump(self):
+        return self.data
+
+
+ 
+##################################################################################################################################
+
+class Patch(object):
    
-   def __iter__(self):
+    def __str__(self):
+        return self.get_name()
+  
+    def __iter__(self):
         #return iter(list(reversed(self.operators)))
         return iter(self.operators)
 
-   # Hashes all data except the name of the patch
-   def getHash(self):
-       m = hashlib.sha256()
-       m.update(self.data[:118])
-       return m.hexdigest()
-     
-   def process(self, data):
-       n = 0
-       self.operators = []
-       for i in range(6):
-          # self.operators.append(self.Operator(data[n:(n + 18)], i))
-           # For some crazy reason, operators are set out in reverse?? ie. operator 1 is at the back of the binary data list
-           self.operators.insert(0, self.Operator(data[n:(n + 18)], (5 - i))) 
-           n += 17
+    # Hashes all data except the name of the patch
+    def getHash(self):
+        m = hashlib.sha256()
+        m.update(self.data[:118])
+        return m.hexdigest()
 
-       self.pitchEGR1 = int(binascii.hexlify(data[102]), 16) 
-       self.pitchEGR2 = int(binascii.hexlify(data[103]), 16) 
-       self.pitchEGR3 = int(binascii.hexlify(data[104]), 16) 
-       self.pitchEGR4 = int(binascii.hexlify(data[105]), 16) 
-       self.pitchEGL1 = int(binascii.hexlify(data[106]), 16) 
-       self.pitchEGL2 = int(binascii.hexlify(data[107]), 16) 
-       self.pitchEGL3 = int(binascii.hexlify(data[108]), 16) 
-       self.pitchEGL4 = int(binascii.hexlify(data[109]), 16)
+    #        The structure of a single valid Yamaha DX7 patch is like this:
+    #
+    #        [Operator 1] [Operator 2] .... [Operator 6] [26 byte patch data]
+    #
+    #        Where:
+    #        [Operator]             <--- 17 bytes
+    #
+    #        So its total size is calculated like this:
+    #
+    #        (6 * 17) + 26 = 128 bytes 
+    #    
+    # Can pass a patch individually
+    def __init__(self, data, index):
+        assert(len(data) == 128)
+        self.index = index
+        self.data = data[102:]
+        assert(len(self.data) == 26)
+       
+        i2 = 0
+        self.operators = []
+        for i1 in range(6):
+            # self.operators.append(self.Operator(data[i2:(i2 + 17)], i1))
+            # For some crazy reason, operators are set out in reverse?? ie. operator 1 is at the back of the binary data list
+            self.operators.insert(0, Operator(data[i2:(i2 + 17)], (5 - i1))) 
+            i2 += 17
 
-       self.algorithm = (int(binascii.hexlify(data[110]), 16) & 0x1F) + 1
-       self.feedback =  int(binascii.hexlify(data[111]), 16) & 0x7
 
-       self.lfowave = (int(binascii.hexlify(data[116]), 16) & 0xE) >> 1
-       self.lfospeed = int(binascii.hexlify(data[112]), 16) 
-       self.lfodelay = int(binascii.hexlify(data[113]), 16) 
-       self.lfopitchmoddepth = int(binascii.hexlify(data[114]), 16) 
-       self.lfoamdepth = int(binascii.hexlify(data[115]), 16) 
-       self.lfosync = bool(int(binascii.hexlify(data[116]), 16) & 0x1)
-       self.lfopitchmodsens = (int(binascii.hexlify(data[116]), 16) & 0xF0) >> 4   
-   
-       self.osckeysens = bool((int(binascii.hexlify(data[111]), 16) & 0x8) >> 3)
-       self.transpose = int(binascii.hexlify(data[117]), 16)
 
-       self.name = binascii.unhexlify(binascii.hexlify(data[118:]))
+    def prettyPrint(self):
+        s = "\n"
+        s += "Patch (voice) name: %s\n"%(self.get_name())
+        s += "Patch (voice) number: %d\n"%(self.index + 1)
+        s += "Algorithm: %d\n"%(self.get_algorithm())
+        s += "Feedback: %d\n"%(self.get_feedback())
+        s += "LFO\n"
+        s += "  Wave: %s\n"%(LFOWaves.get(self.get_lfowave(), "Unknown LFO wave type"))
+        s += "  Speed: %d\n"%(self.get_lfospeed())
+        s += "  Delay: %d\n"%(self.get_lfodelay())
+        s += "  Pitch Mod Depth: %d\n"%(self.get_lfopitchmoddepth())
+        s += "  AM Depth: %d\n"%(self.get_lfoamdepth())
+        s += "  Sync: %s\n"%(self.get_lfosync())
+        s += "  Pitch Modulation Sensitivity: %d\n"%(self.get_lfopitchmodsens())
+        s += "Oscillator Key Sync: %s\n"%(self.get_osckeysens())
+        s += "Pitch Envelope Generator\n"
+        s += "  Rate 1: %d\n"%(self.get_pitchEGR1())
+        s += "  Rate 2: %d\n"%(self.get_pitchEGR2())
+        s += "  Rate 3: %d\n"%(self.get_pitchEGR3())
+        s += "  Rate 4: %d\n"%(self.get_pitchEGR4())
+        s += "  Level 1: %d\n"%(self.get_pitchEGL1())
+        s += "  Level 2: %d\n"%(self.get_pitchEGL2())
+        s += "  Level 3: %d\n"%(self.get_pitchEGL3())
+        s += "  Level 4: %d\n"%(self.get_pitchEGL4())
+        s += "Transpose: %s\n"%(self.getTransposeStr())
+        for operator in self:
+            s += "\n"
+            s += operator.prettyPrint()
 
-       #print self.name
-#binascii.unhexlify("666f6f")
-#print binascii.b2a_uu(data[118:])
+        return s
 
-   def dump(self):
-       s = "\n"
-       s += "Patch (voice) name: %s\n"%(self.name)
-       s += "Patch (voice) number: %d\n"%(self.index + 1)
-       s += "Algorithm: %d\n"%(self.algorithm)
-       s += "Feedback: %d\n"%(self.feedback)
-       s += "LFO\n"
-       s += "  Wave: %s\n"%(LFOWaves.get(self.lfowave, "Unknown LFO wave type"))
-       s += "  Speed: %d\n"%(self.lfospeed)
-       s += "  Delay: %d\n"%(self.lfodelay)
-       s += "  Pitch Mod Depth: %d\n"%(self.lfopitchmoddepth)
-       s += "  AM Depth: %d\n"%(self.lfoamdepth)
-       s += "  Sync: %s\n"%(self.lfosync)
-       s += "  Pitch Modulation Sensitivity: %d\n"%(self.lfopitchmodsens)
-       s += "Oscillator Key Sync: %s\n"%(self.osckeysens)
-       s += "Pitch Envelope Generator\n"
-       s += "  Rate 1: %d\n"%(self.pitchEGR1)
-       s += "  Rate 2: %d\n"%(self.pitchEGR2)
-       s += "  Rate 3: %d\n"%(self.pitchEGR3)
-       s += "  Rate 4: %d\n"%(self.pitchEGR4)
-       s += "  Level 1: %d\n"%(self.pitchEGL1)
-       s += "  Level 2: %d\n"%(self.pitchEGL2)
-       s += "  Level 3: %d\n"%(self.pitchEGL3)
-       s += "  Level 4: %d\n"%(self.pitchEGL4)
-       s += "Transpose: %s\n"%(self.getTransposeStr())
-       for operator in self:
-           s += "\n"
-           s += operator.dump()
 
-       return s
+    def get_pitchEGR1(self):
+        return int(binascii.hexlify(self.data[0]), 16) 
+    def get_pitchEGR2(self):
+        return int(binascii.hexlify(self.data[1]), 16) 
+    def get_pitchEGR3(self):
+        return int(binascii.hexlify(self.data[2]), 16) 
+    def get_pitchEGR4(self):
+        return int(binascii.hexlify(self.data[3]), 16) 
+    def get_pitchEGL1(self):
+        return int(binascii.hexlify(self.data[4]), 16) 
+    def get_pitchEGL2(self):
+        return int(binascii.hexlify(self.data[5]), 16) 
+    def get_pitchEGL3(self):
+        return int(binascii.hexlify(self.data[6]), 16) 
+    def get_pitchEGL4(self):
+        return int(binascii.hexlify(self.data[7]), 16) 
 
-   def hasValidTranspose(self):
-       if (self.transpose >= 0) and (self.transpose <= 48):
+    def get_algorithm(self):
+        return (int(binascii.hexlify(self.data[8]), 16) & 0x1F) + 1   
+    def get_feedback(self):
+        return int(binascii.hexlify(self.data[9]), 16) & 0x7  
+
+    def get_lfowave(self):
+        return (int(binascii.hexlify(self.data[15]), 16) & 0xE) >> 1
+    def get_lfospeed(self):
+        return int(binascii.hexlify(self.data[10]), 16) 
+    def get_lfodelay(self):
+        return int(binascii.hexlify(self.data[11]), 16) 
+    def get_lfopitchmoddepth(self):
+        return int(binascii.hexlify(self.data[12]), 16) 
+    def get_lfoamdepth(self):
+        return int(binascii.hexlify(self.data[13]), 16) 
+    def get_lfosync(self):
+        return bool(int(binascii.hexlify(self.data[14]), 16) & 0x1)
+    def get_lfopitchmodsens(self):
+        return (int(binascii.hexlify(self.data[15]), 16) & 0xF0) >> 4   
+
+    def get_osckeysens(self):
+        return bool((int(binascii.hexlify(self.data[9]), 16) & 0x8) >> 3)
+    def get_transpose(self):
+        return int(binascii.hexlify(self.data[16]), 16)
+
+    def get_name(self):
+        return binascii.unhexlify(binascii.hexlify(self.data[17:]))
+
+    def hasValidTranspose(self):
+       if (self.get_transpose() >= 0) and (self.get_transpose() <= 48):
            return True
        return False
 
-   def getTransposeStr(self):
+    def getTransposeStr(self):
        s = "out of range"
        if self.hasValidTranspose():
-           return "%s%d"%(Notes.get((self.transpose % 12), s), ((self.transpose / 12) + 1))
+           return "%s%d"%(Notes.get((self.get_transpose() % 12), s), ((self.get_transpose() / 12) + 1))
        return s
+       
+
+ 
+
+   
+    # DUMP AS BINARY
+    def dump(self):
+        data = bytearray()
+        for operator in reversed(self.operators):
+            data.extend(bytearray(operator.dump()))
+        data.extend(bytearray(self.data))
+        return bytes(data)
            
 
-   # Potentially pass these as separate files
-   def __init__(self, data, hostfile, index):
-       self.index = index
-       if data is None:
-           # open hostfile and try to parse that, setting self.data
-           self.index = -1
-           pass
-       else:
-           # input1 is data
-           self.hostfile = hostfile  # doesn't necessarily have to be a valid .syx file
-           self.data = data
-           self.process(data)
+   
            
 
 ##################################################################################################################################
 
 
+#        The structure of a valid Yamaha DX7 .syx binary is like this:
+#
+#        [F0 43 00 09 20 00] [patch 1] [patch 2] .... [patch 32] [XX] [F7]
+#
+#        Where:
+#        [F0 43 00 09 20 00]    <--- header bytes
+#        [patch]                <--- 128 bytes
+#        [XX]                   <--- checksum (how is it calculated?)  FIXME
+#        [F7]                   <--- end byte marker
+#
+#        So its total size is calculated like this:
+#
+#        6 + (32 * 128) + 2 = 4104 bytes
+#
+#        Here is info regarding the header:
+#          
+#        unsigned char sysexBeginF0;         // 0xF0
+#        unsigned char yamaha43;             // 0x43
+#        unsigned char subStatusAndChannel;  // 0
+#        unsigned char format9;              // 9
+#        unsigned char sizeMSB;              // 7 bits!  0x20
+#        unsigned char sizeLSB;              // 7 bits!  0x00
+#
+
 # Yamaha DX7 .syx file containing 32 patches
-class YamahaDX7SysEx(object):
+class SysEx(object):
 
-    def isValidHeader(self, data):
-      # print binascii.hexlify(data[0])
-       if data[0] == b'\xF0' and \
-          data[1] == b'\x43' and \
-          data[2] == b'\x00' and \
-          data[3] == b'\x09' and \
-          data[4] == b'\x20' and \
-          data[5] == b'\x00':
-          return True
-       return False
+    def getValidHeader(self):
+        return b'\xF0\x43\x00\x09\x20\x00'
 
 
+    # IN: .syx binary
+    def __init__(self, data):
+        assert(len(data) == 4104)
+        assert(data[0:6] == self.getValidHeader())
+        #print binascii.hexlify(self.getValidHeader())
+        # raise AssertionError("Not a Yamaha DX7 compatible .syx file")
 
-    # IN: path to the .syx file
-    def __init__(self, filepath):
-        self.filepath = filepath
         self.patches = []
+        i2 = 6
+        for i1 in range(32):
+            self.patches.append(Patch(data[i2:(i2 + 128)], i1))
+            i2 += 128
 
-        with open(filepath, "rb") as f:
-            self.data = f.read()
-         
-        self.hasValidHeader = self.isValidHeader(self.data[0:6])
-  
-        if self.hasValidHeader:
-          
-            n = 6
-            for i in range(32):
-                self.patches.append(YamahaDX7Patch(self.data[n:(n + 129)], filepath, i))
-                n += 128
  
-        else:
-            raise TypeError("Not a Yamaha DX7 compatible .syx file")
-
-    def __str__(self):
-        return self.filepath
-
     def __iter__(self):
         return iter(self.patches)
 
-    def dump(self):
+    def prettyPrint(self):
         s = ""
-        s += "Filename: %s\n"%(self.filepath)
         for patch in self:
-            s += patch.dump()
+            s += patch.prettyPrint()
         return s
 
     #def getPatchesByApproxName(self, name):
@@ -289,4 +319,15 @@ class YamahaDX7SysEx(object):
             if name.lower() in patch.name.lower():
                 l.append(patch)
         return l
+
+
+
+    # DUMP AS BINARY
+    def dump(self):
+        data = bytearray(self.getValidHeader())
+        for patch in self:
+            data.extend(bytearray(patch.dump()))
+
+        # FIXME : extend last 2 bytes (checksum)
+        return bytes(data)
 
