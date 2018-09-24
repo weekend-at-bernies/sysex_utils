@@ -1,7 +1,11 @@
 #!/usr/bin/python
 
 # REQUIREMENTS:
+#
+# https://bitbucket.org/techtonik/hexdump/ 
 # $ pip install hexdump
+#
+#
 
 import os
 import sys
@@ -10,6 +14,7 @@ import rolandjx8p_syx
 import yamahadx7_syx
 import binascii
 import hexdump
+import hashlib
  
 
 
@@ -34,14 +39,36 @@ except IOError:
     print("Error: could not open: %s\n"%(opts.inputfile))
     exit(-1)
 
+
+md5_input = hashlib.md5(f).hexdigest()
+# Prints the MD5 sum of the input file:
+#print "%s"%(hashlib.md5(f).hexdigest())
+
 try:
-    print(yamahadx7_syx.SysEx(f).prettyPrint())
-    #print(binascii.hexlify(yamahadx7_syx.SysEx(f).dump()))
-    print(hexdump.hexdump(yamahadx7_syx.SysEx(f).dump()))
-    exit(0)
+
+    syx = yamahadx7_syx.SysEx(f)
+
+    print(syx.prettyPrint())
+    #hexdump.hexdump(syx.dump())
+
+   # THIS WOULD WRITE A .syx TO FILE
+   # f2 = open("yag.syx", "wb")
+   # f2.write(syx.dump())
+    #f2.close()
+
 except Exception as e:
     print(e)
-    pass
+    exit(-1)
+
+try:
+    md5_gen = hashlib.md5(syx.dump()).hexdigest()
+    assert(md5_input == md5_gen)
+except AssertionError as e:
+    print "Error: input MD5 and generated MD5 do not match"
+    exit(-1)
+
+exit(0)
+
 
 
 try:

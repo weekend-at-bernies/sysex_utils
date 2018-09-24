@@ -6,6 +6,8 @@ LFOWaves = {0: "Triangle", 1: "Sawtooth Down", 2: "Sawtooth Up", 3: "Square", 4:
 Notes = {0 : "C", 1 : "C#", 2 : "D", 3 : "D#", 4 : "E", 5 : "F", 6 : "F#", 7 : "G", 8 : "G#", 9 : "A", 10 : "A#", 11 : "B"}
 OscillatorMode = {0 : "Frequency (Ratio)", 1 : "Fixed Frequency (Hz)"}
 
+# https://www.devdungeon.com/content/working-binary-data-python
+
 ##################################################################################################################################
 
 class Operator(object):
@@ -105,6 +107,7 @@ class Operator(object):
         return self.data
 
 
+
  
 ##################################################################################################################################
 
@@ -133,6 +136,10 @@ class Patch(object):
     #        So its total size is calculated like this:
     #
     #        (6 * 17) + 26 = 128 bytes 
+    #
+    #        And the structure of [26 byte patch data] is like this:
+    #        
+    #        [16 bytes data] [10 bytes patch name]
     #    
     # Can pass a patch individually
     def __init__(self, data, index):
@@ -143,11 +150,23 @@ class Patch(object):
        
         i2 = 0
         self.operators = []
+        # In the binary structure, operators are laid out in reverse order (so the first one is operator 6, etc.)
+        # FIXME: does the order of operators affect equality? Suppose i have 2 operators: A, B. Does patch 1 (A,B) == patch 2 (B,A) ???
         for i1 in range(6):
-            # self.operators.append(self.Operator(data[i2:(i2 + 17)], i1))
-            # For some crazy reason, operators are set out in reverse?? ie. operator 1 is at the back of the binary data list
-            self.operators.insert(0, Operator(data[i2:(i2 + 17)], (5 - i1))) 
+            self.operators.append(Operator(data[i2:(i2 + 17)], (5 - i1)))
             i2 += 17
+
+
+    def getComparableData(self):
+        data = bytearray()
+        for operator in self:
+            data.extend(bytearray(operator.dump()))
+        data.extend(bytearray(self.data[0:16]))
+        return bytes(data)
+
+
+    def __eq__(self, patch):
+        return (self.getComparableData() == patch.getComparableData())
 
 
 
@@ -176,7 +195,7 @@ class Patch(object):
         s += "  Level 3: %d\n"%(self.get_pitchEGL3())
         s += "  Level 4: %d\n"%(self.get_pitchEGL4())
         s += "Transpose: %s\n"%(self.getTransposeStr())
-        for operator in self:
+        for operator in reversed(self.operators):
             s += "\n"
             s += operator.prettyPrint()
 
@@ -222,11 +241,12 @@ class Patch(object):
 
     def get_osckeysens(self):
         return bool((int(binascii.hexlify(self.data[9]), 16) & 0x8) >> 3)
+    # FIX ME - is this correct? This is the start of the patch name
     def get_transpose(self):
         return int(binascii.hexlify(self.data[16]), 16)
 
     def get_name(self):
-        return binascii.unhexlify(binascii.hexlify(self.data[17:]))
+        return binascii.unhexlify(binascii.hexlify(self.data[16:]))
 
     def hasValidTranspose(self):
        if (self.get_transpose() >= 0) and (self.get_transpose() <= 48):
@@ -246,14 +266,13 @@ class Patch(object):
     # DUMP AS BINARY
     def dump(self):
         data = bytearray()
-        for operator in reversed(self.operators):
+        for operator in self:
             data.extend(bytearray(operator.dump()))
         data.extend(bytearray(self.data))
         return bytes(data)
            
 
-   
-           
+
 
 ##################################################################################################################################
 
@@ -265,7 +284,7 @@ class Patch(object):
 #        Where:
 #        [F0 43 00 09 20 00]    <--- header bytes
 #        [patch]                <--- 128 bytes
-#        [XX]                   <--- checksum (how is it calculated?)  FIXME
+#        [XX]                   <--- checksum
 #        [F7]                   <--- end byte marker
 #
 #        So its total size is calculated like this:
@@ -293,8 +312,12 @@ class SysEx(object):
     def __init__(self, data):
         assert(len(data) == 4104)
         assert(data[0:6] == self.getValidHeader())
+        # FIXME: raise AssertionError("Not a Yamaha DX7 compatible .syx file")       
+ 
+        # The following should output 'f04300092000'
         #print binascii.hexlify(self.getValidHeader())
-        # raise AssertionError("Not a Yamaha DX7 compatible .syx file")
+ 
+        self.verify_checksum = data[4102]
 
         self.patches = []
         i2 = 6
@@ -327,7 +350,34 @@ class SysEx(object):
         data = bytearray(self.getValidHeader())
         for patch in self:
             data.extend(bytearray(patch.dump()))
-
-        # FIXME : extend last 2 bytes (checksum)
+        data.extend(bytearray(binascii.unhexlify('%x'%(self.getChecksum()))))
+        data.extend(bytearray(b'\xF7'))
         return bytes(data)
+
+
+    def verifyChecksum(self):
+       # print "The checksum on disk is: %s"%(binascii.hexlify(self.checksum))
+       # print "The calculated checksum is: %s"%(hex(self.getChecksum()))
+        return (ord(self.verify_checksum) == self.getChecksum())
+
+
+
+    # The checksum is calculated over the 32 patch region (4096 bytes in size)
+    def getChecksum(self):
+        data = bytearray()
+        for patch in self:
+            data.extend(bytearray(patch.dump()))
+        checksum = int('00', 16)
+        for i in range(len(data)):
+            # This is a regular add (not a bit-wise one!)
+            checksum += (data[i] & int('7F', 16))
+
+        checksum = (~checksum) + 1;   
+        checksum &= 0x7F;
+
+        return checksum    
+        
+
+
+
 
