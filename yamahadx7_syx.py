@@ -310,8 +310,18 @@ class SysEx(object):
 
     # IN: .syx binary
     def __init__(self, data):
-        assert(len(data) == 4104)
-        assert(data[0:6] == self.getValidHeader())
+        try:
+            assert(len(data) == 4104)
+        except AssertionError as e:
+            #e.args += ("Expected .syx data size: 4104 bytes (got %d bytes)"%(len(data)))
+            #raise
+            raise AssertionError("Expected .syx data size: 4104 bytes (got %d bytes)"%(len(data)))
+        try:
+            assert(data[0:6] == self.getValidHeader())
+        except AssertionError as e:
+            #e.args += ("Expected header: %s (got: %s)"%(self.getValidHeader(), binascii.hexlify(data[0:6])))
+            #raise
+            raise AssertionError("Expected header: %s (got: %s)"%(binascii.hexlify(self.getValidHeader()), binascii.hexlify(data[0:6])))
         # FIXME: raise AssertionError("Not a Yamaha DX7 compatible .syx file")       
  
         # The following should output 'f04300092000'
@@ -350,14 +360,14 @@ class SysEx(object):
         data = bytearray(self.getValidHeader())
         for patch in self:
             data.extend(bytearray(patch.dump()))
-        data.extend(bytearray(binascii.unhexlify('%x'%(self.getChecksum()))))
+        data.extend(bytearray(binascii.unhexlify('%02x'%(self.getChecksum()))))
         data.extend(bytearray(b'\xF7'))
         return bytes(data)
 
 
     def verifyChecksum(self):
-       # print "The checksum on disk is: %s"%(binascii.hexlify(self.checksum))
-       # print "The calculated checksum is: %s"%(hex(self.getChecksum()))
+        #print "The checksum on disk is: %s"%(binascii.hexlify(self.verify_checksum))
+        #print "The calculated checksum is: %s"%((hex(self.getChecksum())[2:]).zfill(2))
         return (ord(self.verify_checksum) == self.getChecksum())
 
 
