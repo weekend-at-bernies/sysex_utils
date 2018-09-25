@@ -122,9 +122,10 @@ class Patch(object):
 
     # Hashes all data except the name of the patch
     def getHash(self):
-        m = hashlib.sha256()
-        m.update(self.data[:118])
-        return m.hexdigest()
+        #m = hashlib.md5()
+        #m.update(self.data[:118])
+        #return m.hexdigest()
+        return hashlib.md5(self.data[:118]).hexdigest()
 
     #        The structure of a single valid Yamaha DX7 patch is like this:
     #
@@ -142,7 +143,7 @@ class Patch(object):
     #        [16 bytes data] [10 bytes patch name]
     #    
     # Can pass a patch individually
-    def __init__(self, data, index):
+    def __init__(self, data, index=-1):
         assert(len(data) == 128)
         self.index = index
         self.data = data[102:]
@@ -310,25 +311,28 @@ class SysEx(object):
 
     # IN: .syx binary
     def __init__(self, data):
+
         try:
             assert(len(data) == 4104)
         except AssertionError as e:
             #e.args += ("Expected .syx data size: 4104 bytes (got %d bytes)"%(len(data)))
             #raise
             raise AssertionError("Expected .syx data size: 4104 bytes (got %d bytes)"%(len(data)))
-        try:
-            assert(data[0:6] == self.getValidHeader())
-        except AssertionError as e:
+
+        self.raw_header = data[0:6]
+        self.raw_checksum = data[4102]
+
+       # try:
+       #     assert(data[0:6] == self.getValidHeader())
+       # except AssertionError as e:
             #e.args += ("Expected header: %s (got: %s)"%(self.getValidHeader(), binascii.hexlify(data[0:6])))
             #raise
-            raise AssertionError("Expected header: %s (got: %s)"%(binascii.hexlify(self.getValidHeader()), binascii.hexlify(data[0:6])))
+       #     raise AssertionError("Expected header: %s (got: %s)"%(binascii.hexlify(self.getValidHeader()), binascii.hexlify(data[0:6])))
         # FIXME: raise AssertionError("Not a Yamaha DX7 compatible .syx file")       
  
         # The following should output 'f04300092000'
         #print binascii.hexlify(self.getValidHeader())
  
-        self.verify_checksum = data[4102]
-
         self.patches = []
         i2 = 6
         for i1 in range(32):
@@ -357,7 +361,8 @@ class SysEx(object):
 
     # DUMP AS BINARY
     def dump(self):
-        data = bytearray(self.getValidHeader())
+       # data = bytearray(self.getValidHeader())
+        data = bytearray(self.raw_header)
         for patch in self:
             data.extend(bytearray(patch.dump()))
         data.extend(bytearray(binascii.unhexlify('%02x'%(self.getChecksum()))))
@@ -365,10 +370,10 @@ class SysEx(object):
         return bytes(data)
 
 
-    def verifyChecksum(self):
-        #print "The checksum on disk is: %s"%(binascii.hexlify(self.verify_checksum))
+    def hasValidChecksum(self):
+        #print "The checksum on disk is: %s"%(binascii.hexlify(self.raw_checksum))
         #print "The calculated checksum is: %s"%((hex(self.getChecksum())[2:]).zfill(2))
-        return (ord(self.verify_checksum) == self.getChecksum())
+        return (ord(self.raw_checksum) == self.getChecksum())
 
 
 
