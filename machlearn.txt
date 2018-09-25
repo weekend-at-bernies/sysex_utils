@@ -57,44 +57,45 @@ Obviously it makes no sense to use the patch name or number - so these parameter
 be dismissed. That leaves the rest of the parameter data: stuff such as 'Algorithm', 'LFO', 'Feedback'
 and the 6 operators.  
 
-$ python Dump.py -i test_yamaha_dx7.syx
+$ python3 --version
+Python 3.5.2
 
-Filename: test_yamaha_dx7.syx
+$ python3 Dump.py -i patches/yamahadx7/00d7ca4fef4834aa582edd8b91bb64af.patch 
 
-Patch (voice) name: Fat Brass _
-Patch (voice) number: 1
-Algorithm: 18
-Feedback: 7
+Patch (voice) name: PORTAMENT 
+Patch (voice) number: 0
+Algorithm: 9
+Feedback: 6
 LFO
-  Wave: Triangle
-  Speed: 31
+  Wave: Sine
+  Speed: 23
   Delay: 0
-  Pitch Mod Depth: 0
+  Pitch Mod Depth: 11
   AM Depth: 0
-  Sync: False
+  Sync: True
   Pitch Modulation Sensitivity: 1
-Oscillator Key Sync: False
+Oscillator Key Sync: True
 Pitch Envelope Generator
-  Rate 1: 94
-  Rate 2: 67
-  Rate 3: 95
-  Rate 4: 60
-  Level 1: 49
-  Level 2: 51
+  Rate 1: 99
+  Rate 2: 99
+  Rate 3: 99
+  Rate 4: 99
+  Level 1: 50
+  Level 2: 127
   Level 3: 50
   Level 4: 50
-Transpose: C2
+Transpose: out of range
 
   Operator number: 1
-    AM Sensitivity: 3
+    AM Sensitivity: 0
     Oscillator Mode: Frequency (Ratio)
-    Frequency: 1.00
-    Detune: -2
+    Frequency: 0.50
+    Detune: 6
     Envelope Generator
-      Rate 1: 61
-      Rate 2: 28
-      Rate 3: 14
-      Rate 4: 55
+      Rate 1: 99
+      Rate 2: 99
+      Rate 3: 99
+      Rate 4: 96
       Level 1: 99
       Level 2: 99
       Level 3: 99
@@ -102,84 +103,84 @@ Transpose: C2
     Keyboard Level Scaling
 
   Operator number: 2
-    AM Sensitivity: 3
+    AM Sensitivity: 0
     Oscillator Mode: Frequency (Ratio)
-    Frequency: 1.00
-    Detune: 2
+    Frequency: 0.50
+    Detune: 7
     Envelope Generator
-      Rate 1: 51
-      Rate 2: 32
-      Rate 3: 14
-      Rate 4: 70
-      Level 1: 99
-      Level 2: 97
-      Level 3: 96
+      Rate 1: 99
+      Rate 2: 38
+      Rate 3: 9
+      Rate 4: 36
+      Level 1: 94
+      Level 2: 99
+      Level 3: 94
       Level 4: 0
     Keyboard Level Scaling
 
   Operator number: 3
-    AM Sensitivity: 3
+    AM Sensitivity: 0
     Oscillator Mode: Frequency (Ratio)
-    Frequency: 1.00
-    Detune: 5
+    Frequency: 0.50
+    Detune: 0
     Envelope Generator
-      Rate 1: 47
-      Rate 2: 31
-      Rate 3: 15
-      Rate 4: 50
+      Rate 1: 99
+      Rate 2: 40
+      Rate 3: 23
+      Rate 4: 99
       Level 1: 99
-      Level 2: 96
-      Level 3: 95
+      Level 2: 97
+      Level 3: 94
       Level 4: 0
     Keyboard Level Scaling
 
   Operator number: 4
-    AM Sensitivity: 3
+    AM Sensitivity: 0
     Oscillator Mode: Frequency (Ratio)
-    Frequency: 1.00
-    Detune: -7
+    Frequency: 0.50
+    Detune: -6
     Envelope Generator
-      Rate 1: 62
-      Rate 2: 55
-      Rate 3: 22
-      Rate 4: 50
-      Level 1: 53
-      Level 2: 61
-      Level 3: 62
+      Rate 1: 70
+      Rate 2: 27
+      Rate 3: 16
+      Rate 4: 39
+      Level 1: 90
+      Level 2: 99
+      Level 3: 94
       Level 4: 0
     Keyboard Level Scaling
 
   Operator number: 5
     AM Sensitivity: 0
     Oscillator Mode: Frequency (Ratio)
-    Frequency: 4.02
-    Detune: 6
+    Frequency: 0.50
+    Detune: 7
     Envelope Generator
-      Rate 1: 48
-      Rate 2: 55
-      Rate 3: 22
-      Rate 4: 50
-      Level 1: 99
+      Rate 1: 70
+      Rate 2: 27
+      Rate 3: 16
+      Rate 4: 40
+      Level 1: 90
       Level 2: 99
-      Level 3: 99
+      Level 3: 95
       Level 4: 0
     Keyboard Level Scaling
 
   Operator number: 6
     AM Sensitivity: 0
     Oscillator Mode: Frequency (Ratio)
-    Frequency: 3.00
-    Detune: 7
+    Frequency: 2.00
+    Detune: -6
     Envelope Generator
-      Rate 1: 77
-      Rate 2: 53
-      Rate 3: 20
-      Rate 4: 70
-      Level 1: 99
+      Rate 1: 70
+      Rate 2: 27
+      Rate 3: 16
+      Rate 4: 31
+      Level 1: 90
       Level 2: 99
-      Level 3: 99
+      Level 3: 94
       Level 4: 0
     Keyboard Level Scaling
 
-...
+
 

@@ -1,12 +1,14 @@
 import os
 import binascii
 import hashlib
+import Utils
 
 LFOWaves = {0: "Triangle", 1: "Sawtooth Down", 2: "Sawtooth Up", 3: "Square", 4: "Sine", 5: "Sample and Hold"}
 Notes = {0 : "C", 1 : "C#", 2 : "D", 3 : "D#", 4 : "E", 5 : "F", 6 : "F#", 7 : "G", 8 : "G#", 9 : "A", 10 : "A#", 11 : "B"}
 OscillatorMode = {0 : "Frequency (Ratio)", 1 : "Fixed Frequency (Hz)"}
 
 # https://www.devdungeon.com/content/working-binary-data-python
+
 
 ##################################################################################################################################
 
@@ -17,54 +19,56 @@ class Operator(object):
         self.index = index
         self.data = data
 
+
+
     def get_EG_R1(self):
-        return int(binascii.hexlify(self.data[0]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[0]), 16) 
     def get_EG_R2(self):
-        return int(binascii.hexlify(self.data[1]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[1]), 16) 
     def get_EG_R3(self):
-        return int(binascii.hexlify(self.data[2]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[2]), 16) 
     def get_EG_R4(self):
-        return int(binascii.hexlify(self.data[3]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[3]), 16) 
     def get_EG_L1(self):
-        return int(binascii.hexlify(self.data[4]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[4]), 16) 
     def get_EG_L2(self):
-        return int(binascii.hexlify(self.data[5]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[5]), 16) 
     def get_EG_L3(self):
-        return int(binascii.hexlify(self.data[6]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[6]), 16) 
     def get_EG_L4(self):
-        return int(binascii.hexlify(self.data[7]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[7]), 16) 
 
 #### FIXME BELOW   WHAT ARE THEY, WHERE DID YOU GET THIS INFO
     def get_levelScalingBreakPoint(self):
-        return int(binascii.hexlify(self.data[8]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[8]), 16) 
     def get_scaleLeftDepth(self):
-        return int(binascii.hexlify(self.data[9]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[9]), 16) 
     def get_scaleRightDepth(self):
-        return int(binascii.hexlify(self.data[10]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[10]), 16) 
     def get_scaleCurve(self):
-        return int(binascii.hexlify(self.data[11]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[11]), 16) 
     def get_rateScaleDetune(self):
-        return int(binascii.hexlify(self.data[12]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[12]), 16) 
     def get_sensitivity(self):
-        return int(binascii.hexlify(self.data[13]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[13]), 16) 
     def get_outputLevel(self):
-        return int(binascii.hexlify(self.data[14]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[14]), 16) 
     def get_oscillatorModeFreq(self):
-        return int(binascii.hexlify(self.data[15]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[15]), 16) 
     def get_frequencyFine(self):
-        return int(binascii.hexlify(self.data[16]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[16]), 16) 
 #### FIXME ABOVE
 
     def get_AMsens(self):
-        return int(binascii.hexlify(self.data[13]), 16) & 0x3
+        return int(Utils.binascii_hexlify_py3(self.data[13]), 16) & 0x3
     def get_oscillmode(self):
-        return int(binascii.hexlify(self.data[15]), 16) & 0x1
+        return int(Utils.binascii_hexlify_py3(self.data[15]), 16) & 0x1
     def get_frequencyCoarse(self):
-        return (int(binascii.hexlify(self.data[15]), 16) & 0x3E) >> 1 
+        return (int(Utils.binascii_hexlify_py3(self.data[15]), 16) & 0x3E) >> 1 
     def get_frequencyFine(self):
-        return int(binascii.hexlify(self.data[16]), 16)
+        return int(Utils.binascii_hexlify_py3(self.data[16]), 16)
     def get_detune(self):
-        return (int(binascii.hexlify(self.data[12]), 16) & 0x78) >> 3 
+        return (int(Utils.binascii_hexlify_py3(self.data[12]), 16) & 0x78) >> 3 
 
 
 
@@ -169,6 +173,7 @@ class Patch(object):
     def __eq__(self, patch):
         return (self.getComparableData() == patch.getComparableData())
 
+    
 
 
     def prettyPrint(self):
@@ -203,51 +208,52 @@ class Patch(object):
         return s
 
 
+
     def get_pitchEGR1(self):
-        return int(binascii.hexlify(self.data[0]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[0]), 16) 
     def get_pitchEGR2(self):
-        return int(binascii.hexlify(self.data[1]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[1]), 16) 
     def get_pitchEGR3(self):
-        return int(binascii.hexlify(self.data[2]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[2]), 16) 
     def get_pitchEGR4(self):
-        return int(binascii.hexlify(self.data[3]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[3]), 16) 
     def get_pitchEGL1(self):
-        return int(binascii.hexlify(self.data[4]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[4]), 16) 
     def get_pitchEGL2(self):
-        return int(binascii.hexlify(self.data[5]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[5]), 16) 
     def get_pitchEGL3(self):
-        return int(binascii.hexlify(self.data[6]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[6]), 16) 
     def get_pitchEGL4(self):
-        return int(binascii.hexlify(self.data[7]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[7]), 16) 
 
     def get_algorithm(self):
-        return (int(binascii.hexlify(self.data[8]), 16) & 0x1F) + 1   
+        return (int(Utils.binascii_hexlify_py3(self.data[8]), 16) & 0x1F) + 1 
     def get_feedback(self):
-        return int(binascii.hexlify(self.data[9]), 16) & 0x7  
+        return int(Utils.binascii_hexlify_py3(self.data[9]), 16) & 0x7  
 
     def get_lfowave(self):
-        return (int(binascii.hexlify(self.data[15]), 16) & 0xE) >> 1
+        return (int(Utils.binascii_hexlify_py3(self.data[15]), 16) & 0xE) >> 1
     def get_lfospeed(self):
-        return int(binascii.hexlify(self.data[10]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[10]), 16) 
     def get_lfodelay(self):
-        return int(binascii.hexlify(self.data[11]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[11]), 16) 
     def get_lfopitchmoddepth(self):
-        return int(binascii.hexlify(self.data[12]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[12]), 16) 
     def get_lfoamdepth(self):
-        return int(binascii.hexlify(self.data[13]), 16) 
+        return int(Utils.binascii_hexlify_py3(self.data[13]), 16) 
     def get_lfosync(self):
-        return bool(int(binascii.hexlify(self.data[14]), 16) & 0x1)
+        return bool(int(Utils.binascii_hexlify_py3(self.data[14]), 16) & 0x1)
     def get_lfopitchmodsens(self):
-        return (int(binascii.hexlify(self.data[15]), 16) & 0xF0) >> 4   
+        return (int(Utils.binascii_hexlify_py3(self.data[15]), 16) & 0xF0) >> 4   
 
     def get_osckeysens(self):
-        return bool((int(binascii.hexlify(self.data[9]), 16) & 0x8) >> 3)
+        return bool((int(Utils.binascii_hexlify_py3(self.data[9]), 16) & 0x8) >> 3)
     # FIX ME - is this correct? This is the start of the patch name
     def get_transpose(self):
-        return int(binascii.hexlify(self.data[16]), 16)
+        return int(Utils.binascii_hexlify_py3(self.data[16]), 16)
 
     def get_name(self):
-        return binascii.unhexlify(binascii.hexlify(self.data[16:]))
+        return binascii.unhexlify(Utils.binascii_hexlify_py3(self.data[16:])).decode()
 
     def hasValidTranspose(self):
        if (self.get_transpose() >= 0) and (self.get_transpose() <= 48):
@@ -342,6 +348,7 @@ class SysEx(object):
  
     def __iter__(self):
         return iter(self.patches)
+
 
     def prettyPrint(self):
         s = ""
