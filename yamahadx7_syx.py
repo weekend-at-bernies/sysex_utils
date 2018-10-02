@@ -248,12 +248,20 @@ class Patch(object):
 
     def get_osckeysens(self):
         return bool((int(Utils.binascii_hexlify_py3(self.data[9]), 16) & 0x8) >> 3)
-    # FIX ME - is this correct? This is the start of the patch name
+    # FIX ME - is this correct? Isn't this is the start of the patch name?
     def get_transpose(self):
         return int(Utils.binascii_hexlify_py3(self.data[16]), 16)
 
+    # Returns true if the 'name' region of the data (10 bytes) is UTF-8 decodable (?)
+    def isNameUTF8(self):
+        try:
+            binascii.unhexlify(Utils.binascii_hexlify_py3(self.data[16:])).decode()
+            return True
+        except UnicodeDecodeError:
+            return False
+
     def get_name(self):
-        return binascii.unhexlify(Utils.binascii_hexlify_py3(self.data[16:])).decode()
+        return binascii.unhexlify(Utils.binascii_hexlify_py3(str(self.data[16:]).encode().strip())).decode()[2:-1]
 
     def hasValidTranspose(self):
        if (self.get_transpose() >= 0) and (self.get_transpose() <= 48):

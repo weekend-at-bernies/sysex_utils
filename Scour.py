@@ -16,7 +16,9 @@ import hexdump
 import hashlib
 from glob import glob
  
-
+# DESCRIPTION HERE:
+# Takes input directory, recursively looks for ALL .syx, and extracts UNIQUE .patch files to output directory
+# Run it 
 
 
 
@@ -65,7 +67,8 @@ print "Starting..."
 patch_md5 = []
 
 if os.path.isdir(opts.outputdir):
-    # Recursively enumerate all .patch filenames below output directory
+    # Recursively enumerate all existing .patch filenames below output directory, to
+    # eliminate generating redundant patches
     fn_l = [y for x in os.walk(opts.outputdir) for y in glob(os.path.join(x[0], '*.patch'))]
     for fn in fn_l:
         #print fn
