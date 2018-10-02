@@ -91,6 +91,22 @@ class Operator(object):
         s += "    Keyboard Level Scaling\n"
         return s
 
+    # return all numeric operator data in a list
+    def listData(self):
+        l = []
+        l.append(self.get_AMsens())
+        l.append(self.get_oscillmode())
+        l.append(self.getFrequency())
+        l.append(self.get_detune() - 7)
+        l.append(self.get_EG_R1())
+        l.append(self.get_EG_R2())
+        l.append(self.get_EG_R3())
+        l.append(self.get_EG_R4())
+        l.append(self.get_EG_L1())
+        l.append(self.get_EG_L2())
+        l.append(self.get_EG_L3())
+        l.append(self.get_EG_L4())
+        return l
 
     def getFrequency(self):
         if self.get_oscillmode() == 0:
@@ -206,7 +222,30 @@ class Patch(object):
             s += operator.prettyPrint()
 
         return s
+    
+    # return all numeric patch data in a list
+    def listData(self):
+        l=[]
+        l.append(self.get_algorithm())
+        l.append(self.get_feedback())
+        l.append(self.get_lfospeed())
+        l.append(self.get_lfodelay())
+        l.append(self.get_lfopitchmoddepth())
+        l.append(self.get_lfoamdepth())
+        l.append(int(self.get_lfosync()))
+        l.append(self.get_lfopitchmodsens())
+        l.append(self.get_pitchEGR1())
+        l.append(self.get_pitchEGR2())
+        l.append(self.get_pitchEGR3())
+        l.append(self.get_pitchEGR4())
+        l.append(self.get_pitchEGL1())
+        l.append(self.get_pitchEGL2())
+        l.append(self.get_pitchEGL3())
+        l.append(self.get_pitchEGL4())
+        for operator in reversed(self.operators):
+            l.extend(operator.listData())
 
+        return l
 
 
     def get_pitchEGR1(self):
