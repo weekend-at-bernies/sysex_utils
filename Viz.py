@@ -73,7 +73,7 @@ for filename in os.listdir(opts.inputdir):
         count += 1
 
 data_array = np.array(data_list)
-print('data_array.shape',data_array.shape)
+np.savetxt("data_array.csv", data_array, delimiter=",",fmt='%.4f')
 
 exit(0)
 
