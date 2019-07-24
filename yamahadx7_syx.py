@@ -1,7 +1,11 @@
 import os
+import sys
 import binascii
 import hashlib
 import Utils
+import copy
+from EnumTypes import Synth as Synth
+from EnumTypes import VerifiableField as VerifiableField
 
 LFOWaves = {0: "Triangle", 1: "Sawtooth Down", 2: "Sawtooth Up", 3: "Square", 4: "Sine", 5: "Sample and Hold"}
 Notes = {0 : "C", 1 : "C#", 2 : "D", 3 : "D#", 4 : "E", 5 : "F", 6 : "F#", 7 : "G", 8 : "G#", 9 : "A", 10 : "A#", 11 : "B"}
@@ -14,81 +18,117 @@ OscillatorMode = {0 : "Frequency (Ratio)", 1 : "Fixed Frequency (Hz)"}
 
 class Operator(object):
 
+    #        The structure of a single valid Yamaha DX7 operator is like this:
+    #
+    #        [Operator]             <--- 17 bytes
+    # 
     def __init__(self, data, index):
         assert(len(data) == 17)
         self.index = index
         self.data = data
 
 
+    def hasFloatingEndMarker(self):
+        #return all(ord(c) < 128 for c in str(self.data[16:]))
+       # for c in str(self.data[:]):
+            #print ord(c)
+        #    if c == b'\xE2':
+         #       print "POO3"
+        if sys.version_info >= (3,0):
+            #   print(str(type(self.raw_endmarker)) + " and " + str(type(self.getValidEndmarker())))
+          #  print(str(type(self.data[16:])))
+            #for b in self.data[:]:
+            #    if b == 247:
+            #        print("AVOOZL")
+
+
+            if all(b != 247 for b in self.data[:]):       #  != F7                
+                return False
+            else:
+                #print binascii.hexlify(self.data[16:])
+                return True
+        else:
+            if all(Utils.safe_ord(c) != 247 for c in str(self.data[:])):       #  != F7
+                return False
+            else:
+                #print binascii.hexlify(self.data[16:])
+                return True
+
+
+
 
     def get_EG_R1(self):
-        return int(Utils.binascii_hexlify_py3(self.data[0]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[0]), 16) 
     def get_EG_R2(self):
-        return int(Utils.binascii_hexlify_py3(self.data[1]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[1]), 16) 
     def get_EG_R3(self):
-        return int(Utils.binascii_hexlify_py3(self.data[2]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[2]), 16) 
     def get_EG_R4(self):
-        return int(Utils.binascii_hexlify_py3(self.data[3]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[3]), 16) 
     def get_EG_L1(self):
-        return int(Utils.binascii_hexlify_py3(self.data[4]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[4]), 16) 
     def get_EG_L2(self):
-        return int(Utils.binascii_hexlify_py3(self.data[5]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[5]), 16) 
     def get_EG_L3(self):
-        return int(Utils.binascii_hexlify_py3(self.data[6]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[6]), 16) 
     def get_EG_L4(self):
-        return int(Utils.binascii_hexlify_py3(self.data[7]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[7]), 16) 
 
 #### FIXME BELOW   WHAT ARE THEY, WHERE DID YOU GET THIS INFO
     def get_levelScalingBreakPoint(self):
-        return int(Utils.binascii_hexlify_py3(self.data[8]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[8]), 16) 
     def get_scaleLeftDepth(self):
-        return int(Utils.binascii_hexlify_py3(self.data[9]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[9]), 16) 
     def get_scaleRightDepth(self):
-        return int(Utils.binascii_hexlify_py3(self.data[10]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[10]), 16) 
     def get_scaleCurve(self):
-        return int(Utils.binascii_hexlify_py3(self.data[11]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[11]), 16) 
     def get_rateScaleDetune(self):
-        return int(Utils.binascii_hexlify_py3(self.data[12]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[12]), 16) 
     def get_sensitivity(self):
-        return int(Utils.binascii_hexlify_py3(self.data[13]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[13]), 16) 
     def get_outputLevel(self):
-        return int(Utils.binascii_hexlify_py3(self.data[14]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[14]), 16) 
     def get_oscillatorModeFreq(self):
-        return int(Utils.binascii_hexlify_py3(self.data[15]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[15]), 16) 
     def get_frequencyFine(self):
-        return int(Utils.binascii_hexlify_py3(self.data[16]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[16]), 16) 
 #### FIXME ABOVE
 
     def get_AMsens(self):
-        return int(Utils.binascii_hexlify_py3(self.data[13]), 16) & 0x3
+        return int(Utils.safe_binascii_hexlify(self.data[13]), 16) & 0x3
     def get_oscillmode(self):
-        return int(Utils.binascii_hexlify_py3(self.data[15]), 16) & 0x1
+        return int(Utils.safe_binascii_hexlify(self.data[15]), 16) & 0x1
     def get_frequencyCoarse(self):
-        return (int(Utils.binascii_hexlify_py3(self.data[15]), 16) & 0x3E) >> 1 
+        return (int(Utils.safe_binascii_hexlify(self.data[15]), 16) & 0x3E) >> 1 
     def get_frequencyFine(self):
-        return int(Utils.binascii_hexlify_py3(self.data[16]), 16)
+        return int(Utils.safe_binascii_hexlify(self.data[16]), 16)
     def get_detune(self):
-        return (int(Utils.binascii_hexlify_py3(self.data[12]), 16) & 0x78) >> 3 
+        return (int(Utils.safe_binascii_hexlify(self.data[12]), 16) & 0x78) >> 3 
 
 
 
-    def prettyPrint(self):
+    def prettyPrint(self, n=0):
         s = ""
-        s += "  Operator number: %d\n"%(self.index + 1)
-        s += "    AM Sensitivity: %d\n"%(self.get_AMsens())
-        s += "    Oscillator Mode: %s\n"%(OscillatorMode.get(self.get_oscillmode(), "Unknown oscillator mode type"))
-        s += "    Frequency: %.2f\n"%(self.getFrequency())
-        s += "    Detune: %d\n"%(self.get_detune() - 7)
-        s += "    Envelope Generator\n"
-        s += "      Rate 1: %d\n"%(self.get_EG_R1())
-        s += "      Rate 2: %d\n"%(self.get_EG_R2())
-        s += "      Rate 3: %d\n"%(self.get_EG_R3())
-        s += "      Rate 4: %d\n"%(self.get_EG_R4())
-        s += "      Level 1: %d\n"%(self.get_EG_L1())
-        s += "      Level 2: %d\n"%(self.get_EG_L2())
-        s += "      Level 3: %d\n"%(self.get_EG_L3())
-        s += "      Level 4: %d\n"%(self.get_EG_L4())
-        s += "    Keyboard Level Scaling\n"
+        if n == 0:
+            s += "\n  Operator:\n"
+            s += "    " + Utils.safe_hexdump(self.data)
+        else:
+            s += "  Operator number: %d\n"%(self.index + 1)
+            s += "    AM Sensitivity: %d\n"%(self.get_AMsens())
+            s += "    Oscillator Mode: %s\n"%(OscillatorMode.get(self.get_oscillmode(), "Unknown oscillator mode type"))
+            s += "    Frequency: %.2f\n"%(self.getFrequency())
+            s += "    Detune: %d\n"%(self.get_detune() - 7)
+            s += "    Envelope Generator\n"
+            s += "      Rate 1: %d\n"%(self.get_EG_R1())
+            s += "      Rate 2: %d\n"%(self.get_EG_R2())
+            s += "      Rate 3: %d\n"%(self.get_EG_R3())
+            s += "      Rate 4: %d\n"%(self.get_EG_R4())
+            s += "      Level 1: %d\n"%(self.get_EG_L1())
+            s += "      Level 2: %d\n"%(self.get_EG_L2())
+            s += "      Level 3: %d\n"%(self.get_EG_L3())
+            s += "      Level 4: %d\n"%(self.get_EG_L4())
+            s += "    Keyboard Level Scaling\n"
         return s
 
     # return all numeric operator data in a list
@@ -133,6 +173,8 @@ class Operator(object):
 
 class Patch(object):
    
+    # FIXME: ASCII bytes i think are between 0 and 127 (0x7F). Beyond this then you start getting UnicodeDecodeError exceptions
+    # thrown ??? 
     def __str__(self):
         return self.get_name()
   
@@ -167,7 +209,7 @@ class Patch(object):
         assert(len(data) == 128)
         self.index = index
         self.data = data[102:]
-        assert(len(self.data) == 26)
+       # assert(len(self.data) == 26)
        
         i2 = 0
         self.operators = []
@@ -192,34 +234,68 @@ class Patch(object):
     
 
 
-    def prettyPrint(self):
-        s = "\n"
-        s += "Patch (voice) name: %s\n"%(self.get_name())
-        s += "Patch (voice) number: %d\n"%(self.index + 1)
-        s += "Algorithm: %d\n"%(self.get_algorithm())
-        s += "Feedback: %d\n"%(self.get_feedback())
-        s += "LFO\n"
-        s += "  Wave: %s\n"%(LFOWaves.get(self.get_lfowave(), "Unknown LFO wave type"))
-        s += "  Speed: %d\n"%(self.get_lfospeed())
-        s += "  Delay: %d\n"%(self.get_lfodelay())
-        s += "  Pitch Mod Depth: %d\n"%(self.get_lfopitchmoddepth())
-        s += "  AM Depth: %d\n"%(self.get_lfoamdepth())
-        s += "  Sync: %s\n"%(self.get_lfosync())
-        s += "  Pitch Modulation Sensitivity: %d\n"%(self.get_lfopitchmodsens())
-        s += "Oscillator Key Sync: %s\n"%(self.get_osckeysens())
-        s += "Pitch Envelope Generator\n"
-        s += "  Rate 1: %d\n"%(self.get_pitchEGR1())
-        s += "  Rate 2: %d\n"%(self.get_pitchEGR2())
-        s += "  Rate 3: %d\n"%(self.get_pitchEGR3())
-        s += "  Rate 4: %d\n"%(self.get_pitchEGR4())
-        s += "  Level 1: %d\n"%(self.get_pitchEGL1())
-        s += "  Level 2: %d\n"%(self.get_pitchEGL2())
-        s += "  Level 3: %d\n"%(self.get_pitchEGL3())
-        s += "  Level 4: %d\n"%(self.get_pitchEGL4())
-        s += "Transpose: %s\n"%(self.getTransposeStr())
-        for operator in reversed(self.operators):
+    def prettyPrint(self, n=0):
+        s = ""
+
+        if (n == 0) or (n == 2):
+            s1 = "%s"%(str(self))
+            if self.index >= 0:
+                #if self.index == 0:
+                #    s += "" #"\n"
+                s += "%d: %s"%((self.index + 1), s1)
+            else:
+                s += s1  #"\n" + s1
+
+            if n == 0:
+
+            #s += "%s"%(str(self))
+            #s += Utils.safe_hexdump(self.data[0:102])
+            #s += "\n"
+                for operator in self:               
+                    s += operator.prettyPrint(n)
+                s += "\n  Patch Data:\n"
+                s += "    " + Utils.safe_hexdump(self.data)
             s += "\n"
-            s += operator.prettyPrint()
+           # elif n == 2:
+           #     s += "\n"
+
+        elif n == 1:
+            s += "Patch (voice) name: %s\n"%(self.get_name())
+            s += "Patch (voice) number: %d\n"%(self.index + 1)
+            s += "Algorithm: %d\n"%(self.get_algorithm())
+            s += "Feedback: %d\n"%(self.get_feedback())
+            s += "LFO\n"
+            s += "  Wave: %s\n"%(LFOWaves.get(self.get_lfowave(), "Unknown LFO wave type"))
+            s += "  Speed: %d\n"%(self.get_lfospeed())
+            s += "  Delay: %d\n"%(self.get_lfodelay())
+            s += "  Pitch Mod Depth: %d\n"%(self.get_lfopitchmoddepth())
+            s += "  AM Depth: %d\n"%(self.get_lfoamdepth())
+            s += "  Sync: %s\n"%(self.get_lfosync())
+            s += "  Pitch Modulation Sensitivity: %d\n"%(self.get_lfopitchmodsens())
+            s += "Oscillator Key Sync: %s\n"%(self.get_osckeysens())
+            s += "Pitch Envelope Generator\n"
+            s += "  Rate 1: %d\n"%(self.get_pitchEGR1())
+            s += "  Rate 2: %d\n"%(self.get_pitchEGR2())
+            s += "  Rate 3: %d\n"%(self.get_pitchEGR3())
+            s += "  Rate 4: %d\n"%(self.get_pitchEGR4())
+            s += "  Level 1: %d\n"%(self.get_pitchEGL1())
+            s += "  Level 2: %d\n"%(self.get_pitchEGL2())
+            s += "  Level 3: %d\n"%(self.get_pitchEGL3())
+            s += "  Level 4: %d\n"%(self.get_pitchEGL4())
+            s += "Transpose: %s\n"%(self.getTransposeStr())
+            for operator in reversed(self.operators):
+                s += "\n"
+                s += operator.prettyPrint(n)
+            s += "\n"
+
+        #elif n == 2:
+        #    s1 = "%s\n"%(self.get_name())
+        #    if self.index >= 0:
+        #        if self.index == 0:
+        #            s += "" #"\n"
+        #        s += "%d: %s"%((self.index + 1), s1)
+        #    else:
+        #        s += s1  #"\n" + s1
 
         return s
     
@@ -249,58 +325,65 @@ class Patch(object):
 
 
     def get_pitchEGR1(self):
-        return int(Utils.binascii_hexlify_py3(self.data[0]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[0]), 16) 
     def get_pitchEGR2(self):
-        return int(Utils.binascii_hexlify_py3(self.data[1]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[1]), 16) 
     def get_pitchEGR3(self):
-        return int(Utils.binascii_hexlify_py3(self.data[2]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[2]), 16) 
     def get_pitchEGR4(self):
-        return int(Utils.binascii_hexlify_py3(self.data[3]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[3]), 16) 
     def get_pitchEGL1(self):
-        return int(Utils.binascii_hexlify_py3(self.data[4]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[4]), 16) 
     def get_pitchEGL2(self):
-        return int(Utils.binascii_hexlify_py3(self.data[5]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[5]), 16) 
     def get_pitchEGL3(self):
-        return int(Utils.binascii_hexlify_py3(self.data[6]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[6]), 16) 
     def get_pitchEGL4(self):
-        return int(Utils.binascii_hexlify_py3(self.data[7]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[7]), 16) 
 
     def get_algorithm(self):
-        return (int(Utils.binascii_hexlify_py3(self.data[8]), 16) & 0x1F) + 1 
+        return (int(Utils.safe_binascii_hexlify(self.data[8]), 16) & 0x1F) + 1 
     def get_feedback(self):
-        return int(Utils.binascii_hexlify_py3(self.data[9]), 16) & 0x7  
+        return int(Utils.safe_binascii_hexlify(self.data[9]), 16) & 0x7  
 
     def get_lfowave(self):
-        return (int(Utils.binascii_hexlify_py3(self.data[15]), 16) & 0xE) >> 1
+        return (int(Utils.safe_binascii_hexlify(self.data[15]), 16) & 0xE) >> 1
     def get_lfospeed(self):
-        return int(Utils.binascii_hexlify_py3(self.data[10]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[10]), 16) 
     def get_lfodelay(self):
-        return int(Utils.binascii_hexlify_py3(self.data[11]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[11]), 16) 
     def get_lfopitchmoddepth(self):
-        return int(Utils.binascii_hexlify_py3(self.data[12]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[12]), 16) 
     def get_lfoamdepth(self):
-        return int(Utils.binascii_hexlify_py3(self.data[13]), 16) 
+        return int(Utils.safe_binascii_hexlify(self.data[13]), 16) 
     def get_lfosync(self):
-        return bool(int(Utils.binascii_hexlify_py3(self.data[14]), 16) & 0x1)
+        return bool(int(Utils.safe_binascii_hexlify(self.data[14]), 16) & 0x1)
     def get_lfopitchmodsens(self):
-        return (int(Utils.binascii_hexlify_py3(self.data[15]), 16) & 0xF0) >> 4   
+        return (int(Utils.safe_binascii_hexlify(self.data[15]), 16) & 0xF0) >> 4   
 
     def get_osckeysens(self):
-        return bool((int(Utils.binascii_hexlify_py3(self.data[9]), 16) & 0x8) >> 3)
+        return bool((int(Utils.safe_binascii_hexlify(self.data[9]), 16) & 0x8) >> 3)
     # FIX ME - is this correct? Isn't this is the start of the patch name?
     def get_transpose(self):
-        return int(Utils.binascii_hexlify_py3(self.data[16]), 16)
+        return int(Utils.safe_binascii_hexlify(self.data[16]), 16)
 
     # Returns true if the 'name' region of the data (10 bytes) is UTF-8 decodable (?)
     def isNameUTF8(self):
         try:
-            binascii.unhexlify(Utils.binascii_hexlify_py3(self.data[16:])).decode()
+            binascii.unhexlify(Utils.safe_binascii_hexlify(self.data[16:])).decode()
             return True
         except UnicodeDecodeError:
             return False
 
     def get_name(self):
-        return binascii.unhexlify(Utils.binascii_hexlify_py3(str(self.data[16:]).encode().strip())).decode()[2:-1]
+        # Python 3 only:
+        if sys.version_info >= (3,0):
+            return binascii.unhexlify(Utils.safe_binascii_hexlify(str(self.data[16:]).encode().strip())).decode('unicode-escape')[2:-1]
+#           return binascii.unhexlify(str(self.data[16:]))
+        # Python 2 only:
+        else:          
+            return str(self.data[16:])
+            # return binascii.hexlify(self.data[16:])       <--- returns the hex as a string
 
     def hasValidTranspose(self):
        if (self.get_transpose() >= 0) and (self.get_transpose() <= 48):
@@ -314,7 +397,45 @@ class Patch(object):
        return s
        
 
- 
+    def hasASCIIname(self):
+        #return all(ord(c) < 128 for c in str(self.data[16:]))
+        if all(Utils.safe_ord(c) < 128 for c in str(self.data[16:])):       #  < 7f
+            return True
+        else:
+            #print binascii.hexlify(self.data[16:])
+            return False
+
+    def hasFloatingEndMarker(self):
+
+        # FIX ME ************************  DO THE SAME FOR OPERATOR AS WELL
+        if sys.version_info >= (3,0):
+            #   print(str(type(self.raw_endmarker)) + " and " + str(type(self.getValidEndmarker())))
+          #  print(str(type(self.data[16:])))
+            if all(b != 247 for b in self.data[16:]):       #  != F7 
+                
+                for operator in self:
+                    if operator.hasFloatingEndMarker():
+                        return True
+                return False
+            else:
+                #print binascii.hexlify(self.data[16:])
+                return True
+        # FIX ME ************************
+
+        else:
+            #return all(ord(c) < 128 for c in str(self.data[16:]))
+            if all(Utils.safe_ord(c) != 247 for c in str(self.data[16:])):       #  != F7
+                for operator in self:
+                    if operator.hasFloatingEndMarker():
+                        return True
+                return False
+            else:
+                #print binascii.hexlify(self.data[16:])
+                return True
+
+    #def hasPrintableName(self):
+    #    pass
+
 
    
     # DUMP AS BINARY
@@ -324,6 +445,22 @@ class Patch(object):
             data.extend(bytearray(operator.dump()))
         data.extend(bytearray(self.data))
         return bytes(data)
+
+
+    # PARENT CLASS METHOD
+    # 
+    # Enumerate a list of unexpected field values
+    def getUnexpectedFields(self):
+        l = []
+        if not self.hasValidTranspose(): 
+           # seems to be a lot of deez:
+           # l.append(VerifiableField.transpose)
+            pass
+        if not self.hasASCIIname():
+            l.append(VerifiableField.patchname)
+        if self.hasFloatingEndMarker():
+            l.append(VerifiableField.floatingendmarker)
+        return l
            
 
 
@@ -358,81 +495,200 @@ class Patch(object):
 # Yamaha DX7 .syx file containing 32 patches
 class SysEx(object):
 
-    def getValidHeader(self):
-        return b'\xF0\x43\x00\x09\x20\x00'
+    def getType(self):
+        return Synth.yamaha_dx7
 
 
-    # IN: .syx binary
-    def __init__(self, data):
+    # IN: .syx binary or list of 32 patches
+    def __init__(self, data):  
 
-        try:
-            assert(len(data) == 4104)
-        except AssertionError as e:
-            #e.args += ("Expected .syx data size: 4104 bytes (got %d bytes)"%(len(data)))
-            #raise
-            raise AssertionError("Expected .syx data size: 4104 bytes (got %d bytes)"%(len(data)))
-
-        self.raw_header = data[0:6]
-        self.raw_checksum = data[4102]
-
-       # try:
-       #     assert(data[0:6] == self.getValidHeader())
-       # except AssertionError as e:
-            #e.args += ("Expected header: %s (got: %s)"%(self.getValidHeader(), binascii.hexlify(data[0:6])))
-            #raise
-       #     raise AssertionError("Expected header: %s (got: %s)"%(binascii.hexlify(self.getValidHeader()), binascii.hexlify(data[0:6])))
-        # FIXME: raise AssertionError("Not a Yamaha DX7 compatible .syx file")       
- 
-        # The following should output 'f04300092000'
-        #print binascii.hexlify(self.getValidHeader())
- 
         self.patches = []
-        i2 = 6
-        for i1 in range(32):
-            self.patches.append(Patch(data[i2:(i2 + 128)], i1))
-            i2 += 128
 
+        
+        if ((type(data) is str) or (type(data) is bytes)):
+ 
+            # Python 2 will get 'str'
+            # Python 3 will get 'bytes'
+            
+            assert(len(data) == 4104)
+
+            #try:
+            #    assert(len(data) == 4104)
+            #except AssertionError as e:
+                #e.args += ("Expected .syx data size: 4104 bytes (got %d bytes)"%(len(data)))
+                #raise
+            #    raise AssertionError("Expected .syx data size: 4104 bytes (got %d bytes)"%(len(data)))
+
+            self.raw_header = data[0:6]
+            self.raw_checksum = data[4102]
+            self.raw_endmarker = data[4103]
+
+           # try:
+           #     assert(data[0:6] == self.getValidHeader())
+           # except AssertionError as e:
+                #e.args += ("Expected header: %s (got: %s)"%(self.getValidHeader(), binascii.hexlify(data[0:6])))
+                #raise
+           #     raise AssertionError("Expected header: %s (got: %s)"%(binascii.hexlify(self.getValidHeader()), binascii.hexlify(data[0:6])))
+            # FIXME: raise AssertionError("Not a Yamaha DX7 compatible .syx file")       
+ 
+            # The following should output 'f04300092000'
+            #print binascii.hexlify(self.getValidHeader())
+ 
+            
+            i2 = 6
+            for i1 in range(32):
+                self.patches.append(Patch(data[i2:(i2 + 128)], i1))
+                i2 += 128
+
+        elif type(data) is list:
+
+            assert(len(data) == 32)
+            #self.patches = copy.copy(data)   #copy.deepcopy(data)
+            
+            self.patches = list(data)
+
+            self.raw_header = self.getValidHeaders()[0]
+            self.raw_checksum = binascii.unhexlify('%02x'%(self.calcChecksum()))
+            self.raw_endmarker = self.getValidEndmarker()
+
+
+
+    # PARENT CLASS METHOD
+    # 
+    # Enumerate a list of unexpected field values
+    def getUnexpectedFields(self):
+        l = []
+        if not self.hasValidChecksum():
+            l.append(VerifiableField.checksum)
+        if not self.hasValidHeader():
+            l.append(VerifiableField.header)
+        if not self.hasValidEndmarker():
+            l.append(VerifiableField.endmarker)
+        if self.hasFloatingEndMarker():
+            l.append(VerifiableField.floatingendmarker)
+        return l
+
+    #def __str__(self):
+    #    return "Yamaha DX7"
+
+    def __len__(self):
+        return len(self.patches)
  
     def __iter__(self):
         return iter(self.patches)
 
 
-    def prettyPrint(self):
+    def prettyPrint(self, n=0):
         s = ""
-        for patch in self:
-            s += patch.prettyPrint()
+
+        if n == 0:
+            s += "Header: " + Utils.safe_hexdump(self.raw_header) + "\n\n"
+            for patch in self:
+                s += patch.prettyPrint(0) + "\n"
+            s += "\nChecksum: "
+            s += Utils.safe_hexdump(self.raw_checksum)
+            s += "\nEnd marker: "
+            s += Utils.safe_hexdump(self.raw_endmarker)
+            s += "\n"
+        else:
+            for patch in self:
+                s += patch.prettyPrint(n)
         return s
 
-    #def getPatchesByApproxName(self, name):
-    def findPatchesByName(self, name):
+    # Returns a list of the patches that have a given string in the name
+    def getPatchesByName(self, name):
         l = []
         for patch in self:
-            if name.lower() in patch.name.lower():
+            if name.lower() in str(patch).lower():
                 l.append(patch)
         return l
 
 
 
     # DUMP AS BINARY
-    def dump(self):
-       # data = bytearray(self.getValidHeader())
-        data = bytearray(self.raw_header)
+    def dump(self, corrected=False):
+        if corrected:
+            data = bytearray(self.getValidHeaders()[0])
+        else:
+            data = bytearray(self.raw_header)
         for patch in self:
             data.extend(bytearray(patch.dump()))
-        data.extend(bytearray(binascii.unhexlify('%02x'%(self.getChecksum()))))
-        data.extend(bytearray(b'\xF7'))
+        if corrected:
+            data.extend(bytearray(binascii.unhexlify('%02x'%(self.calcChecksum()))))
+            data.extend(bytearray(b'\xF7'))
+        else:
+            data.extend(bytearray(self.raw_checksum))
+            data.extend(bytearray(self.raw_endmarker))
         return bytes(data)
 
+    # FIXME: need to check header, and end
+    def hasFloatingEndMarker(self):
+        for patch in self:
+            if patch.hasFloatingEndMarker():
+                return True
+        return False
 
-    def hasValidChecksum(self):
-        #print "The checksum on disk is: %s"%(binascii.hexlify(self.raw_checksum))
-        #print "The calculated checksum is: %s"%((hex(self.getChecksum())[2:]).zfill(2))
-        return (ord(self.raw_checksum) == self.getChecksum())
 
 
+    def getValidEndmarker(self):
+        return b'\xF7'
 
+    def hasValidEndmarker(self):
+        if sys.version_info >= (3,0):
+            return bytes([self.raw_endmarker]) == self.getValidEndmarker()
+        else:
+            return self.raw_endmarker == self.getValidEndmarker()
+
+
+    # A list of headers that are known to work
+    def getValidHeaders(self):
+        return [b'\xF0\x43\x00\x09\x20\x00', b'\xF0\x43\x00\x09\x10\x00']
+
+    #def getExpectedHeader(self):
+    #    return b'\xF0\x43\x00\x09\x20\x00'
+        #F0 43 00 09 10 00
+
+    def hasValidHeader(self):
+   # def hasExpectedHeader(self):
+        # Works in Python 2 (not sure about 3????):
+        #print "The header on disk is: %s"%(binascii.hexlify(self.raw_header))
+
+        # Python 3 only:
+        if sys.version_info >= (3,0):
+            #print "The expected header is: %s"%((hex(self.getExpectedHeader())[2:]).zfill(2))
+            #return (ord(self.raw_header) == self.getExpectedHeader())
+            return Utils.safe_ord(self.raw_header) in self.getValidHeaders()
+
+        # Python 2 only:
+        else:
+            #print "The expected header is: %s"%()
+            #return binascii.hexlify(self.raw_header) == binascii.hexlify(self.getExpectedHeader())
+            return self.raw_header in self.getValidHeaders()
+
+
+    # DEPRECATED : FIX ME
+    # Expected checksum based on the algorithm we use.
     # The checksum is calculated over the 32 patch region (4096 bytes in size)
-    def getChecksum(self):
+    def calcChecksumWork(self, patches):
+        data = bytearray()
+        for patch in patches:
+            data.extend(bytearray(patch.dump()))
+        checksum = int('00', 16)
+        for i in range(len(data)):
+            # This is a regular add (not a bit-wise one!)
+            checksum += (data[i] & int('7F', 16))
+
+        checksum = (~checksum) + 1;   
+        checksum &= 0x7F;
+
+        return checksum
+
+
+
+    # Expected checksum based on the algorithm we use.
+    # The checksum is calculated over the 32 patch region (4096 bytes in size)
+    def calcChecksum(self):
+        #return self.calcChecksumWork(self.patches)    
         data = bytearray()
         for patch in self:
             data.extend(bytearray(patch.dump()))
@@ -445,8 +701,14 @@ class SysEx(object):
         checksum &= 0x7F;
 
         return checksum    
+
+  #  def hasExpectedChecksum(self):
+    def hasValidChecksum(self):
+        #print "The checksum on disk is: %s"%(binascii.hexlify(self.raw_checksum))
+        #print "The calculated checksum is: %s"%((hex(self.calcChecksum())[2:]).zfill(2))
+        return (Utils.safe_ord(self.raw_checksum) == self.calcChecksum())
         
 
-
+##################################################################################################################################
 
 

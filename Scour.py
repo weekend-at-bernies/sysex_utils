@@ -5,21 +5,33 @@
 # https://bitbucket.org/techtonik/hexdump/ 
 # $ pip install hexdump
 #
-#
 
 import os
 import sys
 import optparse
-import yamahadx7_syx
-import binascii
-import hexdump
-import hashlib
-from glob import glob
+#import yamahadx7_syx
+#import binascii
+#import hexdump
+#import hashlib
+import SyxType
+#from glob import glob
  
 # DESCRIPTION HERE:
 # Takes input directory, recursively looks for ALL .syx, and extracts UNIQUE .patch files to output directory
 # Run it 
 
+
+
+
+
+def print_menu():  ## Your menu design here
+    print(30 * "-", "MENU", 30 * "-")
+    print("1. Recursively scour .syx under input directory, and extract all unique patches to an output directory")
+    print("2. Search for a patch by name ")
+    print("3. Menu Option 3")
+    print("4. Menu Option 4")
+    print("5. Exit")
+    print(67 * "-")
 
 
 def printHelpAndExit():
@@ -31,7 +43,7 @@ def printHelpAndExit():
 if __name__ == "__main__":
     parser = optparse.OptionParser()
     parser.add_option("-i", help="input directory (default: current)", dest="inputdir",  metavar="<directory>")
-    parser.add_option("-o", help="output directory (default: ./out)", dest="outputdir",  metavar="<directory>")
+   # parser.add_option("-o", help="output directory (default: ./out)", dest="outputdir",  metavar="<directory>")
     parser.add_option("-x", help="don't ask (just do)", action="store_true", dest="dontask",  default=False)
     (opts, args) = parser.parse_args()
 
@@ -63,6 +75,8 @@ if (opts.dontask is False):
     
 print ""
 print "Starting..."
+
+#################################################################################################################
 
 patch_md5 = []
 
@@ -99,6 +113,11 @@ else:
 existing_patch_count = len(patch_md5)
 
 skipped_syx_count = 0
+
+#################################################################################################################
+
+# IN directory, list of supported extensions, target synth
+# OUT list of [ [filename, syx object], ... ]
 
 # Recursively enumerate all .syx filenames below input directory
 fn_l = [y for x in os.walk(opts.inputdir) for y in glob(os.path.join(x[0], '*.syx'))]
@@ -160,4 +179,7 @@ print "Number of skipped .syx files: %d\n"%(skipped_syx_count)
 
 exit(0)
 
+
+
+def 
 

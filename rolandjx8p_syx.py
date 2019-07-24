@@ -2,6 +2,40 @@ import os
 import binascii
 import hashlib
 
+# REFERENCES:
+
+# http://llamamusic.com/super-jx/mks70SysEx_I.html
+# This reference explains the header:
+# F0 : Start of System Exclusive message 
+# 41 : Synthesizer manufacturer (Roland == 41)
+# 35 : IPR (individual parameter) ???   When the JX-8P transmits a sysex, this will be 36
+# 00 : MIDI channel (00 == channel 1, 01 == channel 2, etc.)
+# 21 : Data was sent from ????
+# 20 : After the header, the information contains ????   When the JX-8P transmits a sysex, this will be 30
+# 01 : Group number
+
+# https://www.gearslutz.com/board/electronic-music-instruments-and-electronic-music-production/789017-jx8p-novation-remote-zero-sl-mk-i-sysex-help.html
+# There is some (conflicting) info here
+# F0 :
+# 41 :
+# 35 : Operation code? Parameter?
+# 00 :
+# 21 : Format type?
+# 20 : Level # ??? In this case 1 ??
+# 01
+
+# http://www.wolzow.com/analog/jx-10-bulkdump.htm
+# This reference clarifies Group # and Level #:
+# Level # = 20 (Tone), 30 (Patch)
+# Group # = 01 (Tone A), 02 (Tone B)
+
+# http://www.synthzone.com/mschreier/html/files/jx-8p.pdf
+# Right at the back of the official manual is a section called "JX-8P MIDI IMPLEMENTATION"
+
+# http://www.wolzow.com/analog/jx-10-bulkdump.htm
+# https://dialogaudio.com/modulationprocessor/sysex_info.php
+# http://forum.vintagesynth.com/viewtopic.php?f=5&t=68005
+# https://translate.google.com.au/translate?hl=en&sl=fr&u=https://fr.audiofanzine.com/synthe-analogique/roland/JUNO-106/forums/t.482378,impossible-de-charger-certains-sysex-achetes-sur-le-web-dans-mon-juno-106.html&prev=search
 
 class RolandJX8PPatch(object):
 

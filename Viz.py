@@ -12,6 +12,7 @@ import sys
 import optparse
 import rolandjx8p_syx
 import yamahadx7_syx
+import yamahatx802_syx
 import binascii
 # Only use hexdump for python 2 (at the moment)
 if not sys.version_info >= (3,0):
