@@ -16,6 +16,32 @@ from EnumTypes import VerifiableField as VerifiableField
 
 ##################################################################################################################################
 # Patch is 155 bytes length
+#
+# 10 bytes is the patch name
+# That leaves 145 bytes of patch data
+#
+# Compare this to a DX7 patch (128 bytes inc. 10 byte patch name):
+
+    #        The structure of a single valid Yamaha DX7 patch is like this:
+    #
+    #        [Operator 1] [Operator 2] .... [Operator 6] [26 byte patch data]
+    #
+    #        Where:
+    #        [Operator]             <--- 17 bytes
+    #
+    #        So its total size is calculated like this:
+    #
+    #        (6 * 17) + 26 = 128 bytes 
+    #
+    #        And the structure of [26 byte patch data] is like this:
+    #        
+    #        [16 bytes data] [10 bytes patch name]
+
+#
+# So the TX802 has 145 - 118 = 27 extra bytes
+
+# Apparently TX802 loads DX7 patches ????
+
 
 class Patch(object):
    
