@@ -171,6 +171,22 @@ class Operator(object):
  
 ##################################################################################################################################
 
+    #        The structure of a single valid Yamaha DX7 patch is like this:
+    #
+    #        [Operator 1] [Operator 2] .... [Operator 6] [26 byte patch data]
+    #
+    #        Where:
+    #        [Operator]             <--- 17 bytes
+    #
+    #        So its total size is calculated like this:
+    #
+    #        (6 * 17) + 26 = 128 bytes 
+    #
+    #        And the structure of [26 byte patch data] is like this:
+    #        
+    #        [16 bytes data] [10 bytes patch name]
+    #    
+
 class Patch(object):
    
     # FIXME: ASCII bytes i think are between 0 and 127 (0x7F). Beyond this then you start getting UnicodeDecodeError exceptions
@@ -189,21 +205,7 @@ class Patch(object):
         #return m.hexdigest()
         return hashlib.md5(self.data[:118]).hexdigest()
 
-    #        The structure of a single valid Yamaha DX7 patch is like this:
-    #
-    #        [Operator 1] [Operator 2] .... [Operator 6] [26 byte patch data]
-    #
-    #        Where:
-    #        [Operator]             <--- 17 bytes
-    #
-    #        So its total size is calculated like this:
-    #
-    #        (6 * 17) + 26 = 128 bytes 
-    #
-    #        And the structure of [26 byte patch data] is like this:
-    #        
-    #        [16 bytes data] [10 bytes patch name]
-    #    
+
     # Can pass a patch individually
     def __init__(self, data, index=-1):
         assert(len(data) == 128)

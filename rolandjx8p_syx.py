@@ -43,6 +43,15 @@ from EnumTypes import VerifiableField as VerifiableField
 # https://translate.google.com.au/translate?hl=en&sl=fr&u=https://fr.audiofanzine.com/synthe-analogique/roland/JUNO-106/forums/t.482378,impossible-de-charger-certains-sysex-achetes-sur-le-web-dans-mon-juno-106.html&prev=search
 
 
+raw_sysex_data_len = 2496
+sysex_patch_count = 32
+
+raw_patch_data_len = 78
+raw_patch_name_len = 11
+raw_patch_name_offset = 7
+
+
+
 # DEPRECATED (don't use):
 class RolandJX8PPatch(object):
 
@@ -164,6 +173,9 @@ class RolandJX8PSysEx(object):
 
 
 
+
+
+
 ##################################################################################################################################
 # A patch is 78 bytes length
 # It is structured like this:
@@ -188,15 +200,15 @@ class Patch(object):
         #m.update(self.data[:118])
         #return m.hexdigest()
         data = bytearray()
-        data.extend(bytearray(self.data[0:7]))
+        data.extend(bytearray(self.data[0:raw_patch_name_offset]))
         # skip over patch name
-        data.extend(bytearray(self.data[18:]))
+        data.extend(bytearray(self.data[(raw_patch_name_offset + raw_patch_name_len):]))
         return hashlib.md5(data).hexdigest()
 
 
     # Can pass a patch individually
     def __init__(self, data, index=-1):
-        assert(len(data) == 78)
+        assert(len(data) == raw_patch_data_len)
         self.index = index
         self.data = data[0:]
        # assert(len(self.data) == 26)
@@ -206,9 +218,9 @@ class Patch(object):
 
     def getComparableData(self):
         data = bytearray()
-        data.extend(bytearray(self.data[0:7]))
+        data.extend(bytearray(self.data[0:raw_patch_name_offset]))
         # skip over patch name
-        data.extend(bytearray(self.data[18:]))
+        data.extend(bytearray(self.data[(raw_patch_name_offset + raw_patch_name_len):]))
         return bytes(data)
 
 
@@ -244,11 +256,14 @@ class Patch(object):
         return s
     
 
+    def getRawName(self):
+        return self.data[raw_patch_name_offset:(raw_patch_name_offset + raw_patch_name_len)]
+
 
     # Returns true if the 'name' region of the data (10 bytes) is UTF-8 decodable (?)
     def isNameUTF8(self):
         try:
-            binascii.unhexlify(Utils.safe_binascii_hexlify(self.data[7:18])).decode()
+            binascii.unhexlify(Utils.safe_binascii_hexlify(self.getRawName())).decode()
             return True
         except UnicodeDecodeError:
             return False
@@ -256,18 +271,18 @@ class Patch(object):
     def get_name(self):
         # Python 3 only:
         if sys.version_info >= (3,0):
-            return binascii.unhexlify(Utils.safe_binascii_hexlify(str(self.data[7:18]).encode().strip())).decode('unicode-escape')[2:-1]
+            return binascii.unhexlify(Utils.safe_binascii_hexlify(str(self.getRawName()).encode().strip())).decode('unicode-escape')[2:-1]
 #           return binascii.unhexlify(str(self.data[16:]))
         # Python 2 only:
         else:          
-            return str(self.data[7:18])
+            return str(self.getRawName())
             # return binascii.hexlify(self.data[16:])       <--- returns the hex as a string
 
 
 
     def hasASCIIname(self):
         #return all(ord(c) < 128 for c in str(self.data[16:]))
-        if all(Utils.safe_ord(c) < 128 for c in str(self.data[7:25])):       #  < 7f
+        if all(Utils.safe_ord(c) < 128 for c in str(self.getRawName())):       #  < 7f
             return True
         else:
             #print binascii.hexlify(self.data[16:])
@@ -311,18 +326,18 @@ class SysEx(object):
             # Python 2 will get 'str'
             # Python 3 will get 'bytes'
             
-            assert(len(data) == 2496)
+            assert(len(data) == raw_sysex_data_len)
 
             
          
             i2 = 0
-            for i1 in range(32):
-                self.patches.append(Patch(data[i2:(i2 + 78)], i1))
-                i2 += 78
+            for i1 in range(sysex_patch_count):
+                self.patches.append(Patch(data[i2:(i2 + raw_patch_data_len)], i1))
+                i2 += raw_patch_data_len
 
         elif type(data) is list:
 
-            assert(len(data) == 32)
+            assert(len(data) == sysex_patch_count)
             #self.patches = copy.copy(data)   #copy.deepcopy(data)
             
             self.patches = list(data)
