@@ -314,6 +314,9 @@ class SysEx(object):
     def getType(self):
         return Synth.roland_jx8p
 
+    def get(self):
+        return self
+
 
     # IN: .syx binary or list of 32 patches
     def __init__(self, data):  

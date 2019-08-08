@@ -8,13 +8,16 @@
 #from yamahadx7_syx import Patch as YamahaDX7patch
 import yamahadx7_syx
 import rolandjx8p_syx
-import yamahatx802_syx
+import yamahatx802voice_syx
+import yamahatx802perform_syx
 import os
 import binascii
 import hexdump
 import hashlib
 from EnumTypes import Synth as Synth
 from EnumTypes import Bank as Bank
+from EnumTypes import FileType as FileType
+import Settings
 #from EnumTypes import VerifiableField as VerifiableField
 import Utils
 from glob import glob
@@ -35,7 +38,7 @@ class PatchHunter(object):
 
             elif self.synth == Synth.yamaha_tx802:
                 TargetModule = yamahatx802_syx
-                sysex_patch_count = 32
+                sysex_patch_count = 32  # FIXME ... for performance this is 64
                 
             elif self.synth == Synth.roland_jx8p:
                 #TargetModule = rolandjx8p_syx
@@ -143,11 +146,34 @@ class PatchHunter(object):
         return len(self.could_not_parse)
         
 
-    def __init__(self, inputdir, synth, bank): 
+    def __init__(self, inputdir, synth, bank, filetype): 
 
         self.inputdir = inputdir
         self.synth = synth
         self.bank = bank
+        self.filetype = filetype
+
+
+
+        cls_voices = []
+        cls_performances = []
+        cls = []
+
+        if synth == Synth.yamaha_dx7:
+            cls_voices = [yamahadx7_syx]
+        elif synth == Synth.roland_jx8p:
+            cls_voices = [rolandjx8p_syx]
+        elif synth == Synth.yamaha_tx802:
+            cls_voices = [yamahatx802voice_syx, yamahadx7_syx]
+            cls_performances = [yamahatx802perform_syx]
+
+        if bank == Bank.voice:
+            cls = cls_voices
+        elif bank == Bank.performance:
+            cls = cls_performances
+
+
+
 
         self.enumerated = []
         self.could_not_open = []
@@ -157,7 +183,8 @@ class PatchHunter(object):
         self.unique_patches = {}
 
         # Recursively enumerate all target file types below input directory
-        fn_l = [y for x in os.walk(inputdir) for y in glob(os.path.join(x[0], '*.%s'%(Utils.exts_dict[bank])))]
+       # fn_l = [y for x in os.walk(inputdir) for y in glob(os.path.join(x[0], '*.%s'%(Utils.exts_dict[bank])))]  # FIX ME : make extension case-insenisitive
+        fn_l = [y for x in os.walk(inputdir) for y in glob(os.path.join(x[0], '*.%s'%(filetype.value)))]  # FIX ME : make extension case-insenisitive
         for fn in fn_l:
             #print fn
             try:
@@ -170,32 +197,36 @@ class PatchHunter(object):
 
             md5 = hashlib.md5(data).hexdigest()
 
-            try:
 
-                obj = None
+            obj = None
 
-                if synth == Synth.yamaha_dx7:
-                    TargetModule = yamahadx7_syx
-                elif synth == Synth.roland_jx8p:
-                    TargetModule = rolandjx8p_syx
-                elif synth == Synth.yamaha_tx802:
-                    TargetModule = yamahatx802_syx
-
-                if bank == Bank.sysex:
-                    obj = TargetModule.SysEx(data)  
-                    for patch in obj:
-                        if patch.getHash() not in self.unique_patches:
-                            self.unique_patches[patch.getHash()] = patch
-                        self.patch_count += 1
                         
-                elif bank == Bank.patch:
-                    obj = TargetModule.Patch(data)
-                    if obj.getHash() not in self.unique_patches:
-                        self.unique_patches[obj.getHash()] = obj
+            for c in cls:
+
+                l = []
+                try:
+                    if filetype == FileType.sysex:
+                        obj = c.SysEx(data)              # Raises AssertionError
+                        obj = obj.get()
+                        l = iter(obj)
+                    elif filetype == FileType.patch:
+                        obj = c.Patch(data)              # Raises AssertionError
+                        l = [obj]
+                except AssertionError:
+                    continue
+
+
+
+                for patch in l:
+                    if patch.getHash() not in self.unique_patches:
+                        self.unique_patches[patch.getHash()] = patch
                     self.patch_count += 1
 
-                if obj is not None:
-                    self.enumerated.append([fn, obj])
+                break
+
+
+            if obj is not None:
+                self.enumerated.append([fn, obj])
 
 
                 #md5_gen = hashlib.md5(syx.dump()).hexdigest()
@@ -230,7 +261,7 @@ class PatchHunter(object):
 
     
 
-            except AssertionError as e:
+            else:
                 #print str(e)
                 #print "WARNING: skipping: %s\n"%(fn)
                 #skipped_syx_count += 1

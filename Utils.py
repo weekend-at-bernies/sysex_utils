@@ -4,6 +4,7 @@ import Settings
 import hexdump
 import os
 from glob import glob
+from EnumTypes import FileType as FileType
 from EnumTypes import Bank as Bank
 from EnumTypes import Synth as Synth
 
@@ -91,8 +92,9 @@ def safe_ord(b):
         return ord(b)
 
 
-exts_dict =  {Bank.sysex:Settings.sysex_file_extension, Bank.patch:Settings.patch_file_extension}
+#exts_dict =  {Bank.sysex:Settings.sysex_file_extension, Bank.patch:Settings.patch_file_extension}
 
+filetypes = list(f.name for f in FileType)  
 banks = list(b.name for b in Bank)  
 synths = list(s.name for s in Synth)
 

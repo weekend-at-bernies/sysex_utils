@@ -14,6 +14,7 @@ import optparse
 #import hexdump
 #import hashlib
 #from SyxType import SyxType as SyxType
+from EnumTypes import FileType as FileType
 from EnumTypes import Synth as Synth
 from EnumTypes import Bank as Bank
 import PatchHunter
@@ -31,9 +32,9 @@ import Unbuffered
 
 
 def doMenu():
-    if hunter.bank == Bank.patch:
+    if hunter.filetype == FileType.patch:
         optionLoop(getPatchMenu())
-    elif hunter.bank == Bank.sysex:
+    elif hunter.filetype == FileType.sysex:
         optionLoop(getSysexMenu())
 
 
@@ -295,7 +296,8 @@ def getPatchMenu():
 
 def doSummaryWork():
     print ("\nTarget synth: %s"%(synth.value))
-    print ("Number of .%s files found: %d"%(bank.value, (len(hunter) + hunter.getFailedCount() + hunter.getInvalidCount())))  
+    print ("Target bank: %s"%(bank.value))
+    print ("Number of .%s files found: %d"%(filetype.value, (len(hunter) + hunter.getFailedCount() + hunter.getInvalidCount())))  
     #print ("Bank type: %s"%(bank.name)
     print ("\nFailed to open: %d"%(hunter.getFailedCount()))
     print ("Failed to parse: %d"%(hunter.getInvalidCount()))
@@ -322,6 +324,7 @@ if __name__ == "__main__":
     parser = optparse.OptionParser()
     parser.add_option("-i", help="input directory", dest="inputdir",  metavar="<input directory>")                 # required
     parser.add_option("-b", help="bank type: %s"%(Utils.banks), dest="banktype",  metavar="<bank>")                # required
+    parser.add_option("-f", help="file type: %s"%(Utils.filetypes), dest="filetype",  metavar="<filetype>")                # required
     parser.add_option("-s", help="synth type: %s"%(Utils.synths), dest="synthtype",  metavar="<synth>")            # required
     parser.add_option("-l", help="log file", dest="logfile",  metavar="<log file>")                                # optional
    # parser.add_option("-o", help="output directory (default: ./out)", dest="outputdir",  metavar="<directory>")
@@ -362,13 +365,20 @@ except KeyError:
     print("Error: invalid <synth> specified: %s\n"%(opts.synthtype))
     printHelpAndExit() 
 
+try:
+    filetype = FileType[opts.filetype]
+except KeyError:
+    print("Error: invalid <filetype> specified: %s\n"%(opts.filetype))
+    printHelpAndExit() 
+
 #if (opts.outputdir is None):
 #    opts.outputdir = "%s/out"%(os.getcwd())
 
 print ("\nInput directory: %s"%(opts.inputdir))
 print ("Synth type: %s"%(synth.value))
-print ("Bank type: %s"%(bank.name))
-print ("Target file extension: .%s"%(bank.value))
+print ("Bank type: %s"%(bank.value))
+print ("File type: %s"%(filetype.name))
+print ("Target file extension: .%s"%(filetype.value))
 #print ("Output directory: %s"%(opts.outputdir)
 
 #if os.path.isdir(opts.outputdir):
@@ -388,7 +398,7 @@ print ("Starting...")
 
 #################################################################################################################
 
-hunter = PatchHunter.PatchHunter(opts.inputdir, synth, bank)
+hunter = PatchHunter.PatchHunter(opts.inputdir, synth, bank, filetype)
 doSummaryWork()
 
 

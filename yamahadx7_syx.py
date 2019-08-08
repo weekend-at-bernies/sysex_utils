@@ -14,6 +14,26 @@ OscillatorMode = {0 : "Frequency (Ratio)", 1 : "Fixed Frequency (Hz)"}
 # https://www.devdungeon.com/content/working-binary-data-python
 
 
+
+raw_sysex_data_len = 4104
+sysex_header_len = 6
+sysex_patch_count = 32
+
+raw_patch_data_len = 128
+patch_operator_count = 6
+raw_patch_name_len = 10
+raw_patch_name_offset = 117 # 0-based
+
+raw_operator_data_len = 17
+
+
+
+
+
+
+
+
+
 ##################################################################################################################################
 
 class Operator(object):
@@ -23,7 +43,7 @@ class Operator(object):
     #        [Operator]             <--- 17 bytes
     # 
     def __init__(self, data, index):
-        assert(len(data) == 17)
+        assert(len(data) == raw_operator_data_len)
         self.index = index
         self.data = data
 
@@ -208,7 +228,7 @@ class Patch(object):
 
     # Can pass a patch individually
     def __init__(self, data, index=-1):
-        assert(len(data) == 128)
+        assert(len(data) == raw_patch_data_len)
         self.index = index
         self.data = data[102:]
        # assert(len(self.data) == 26)
@@ -217,16 +237,16 @@ class Patch(object):
         self.operators = []
         # In the binary structure, operators are laid out in reverse order (so the first one is operator 6, etc.)
         # FIXME: does the order of operators affect equality? Suppose i have 2 operators: A, B. Does patch 1 (A,B) == patch 2 (B,A) ???
-        for i1 in range(6):
-            self.operators.append(Operator(data[i2:(i2 + 17)], (5 - i1)))
-            i2 += 17
+        for i1 in range(patch_operator_count):
+            self.operators.append(Operator(data[i2:(i2 + raw_operator_data_len)], ((patch_operator_count - 1) - i1)))
+            i2 += raw_operator_data_len
 
 
     def getComparableData(self):
         data = bytearray()
         for operator in self:
             data.extend(bytearray(operator.dump()))
-        data.extend(bytearray(self.data[0:16]))
+        data.extend(bytearray(self.data[0:(raw_operator_data_len - 1)]))
         return bytes(data)
 
 
@@ -372,19 +392,27 @@ class Patch(object):
     # Returns true if the 'name' region of the data (10 bytes) is UTF-8 decodable (?)
     def isNameUTF8(self):
         try:
-            binascii.unhexlify(Utils.safe_binascii_hexlify(self.data[16:])).decode()
+            binascii.unhexlify(Utils.safe_binascii_hexlify(self.getRawName())).decode()
             return True
         except UnicodeDecodeError:
             return False
 
+
+    def getRawName(self):
+        return self.data[(1 + raw_patch_name_offset - (patch_operator_count * raw_operator_data_len)):]
+
+
+
     def get_name(self):
         # Python 3 only:
         if sys.version_info >= (3,0):
-            return binascii.unhexlify(Utils.safe_binascii_hexlify(str(self.data[16:]).encode().strip())).decode('unicode-escape')[2:-1]
+          #  return binascii.unhexlify(Utils.safe_binascii_hexlify(str(self.data[16:]).encode().strip())).decode('unicode-escape')[2:-1]
+            return binascii.unhexlify(Utils.safe_binascii_hexlify(str(self.getRawName()).encode().strip())).decode('unicode-escape')[2:-1]
 #           return binascii.unhexlify(str(self.data[16:]))
         # Python 2 only:
         else:          
-            return str(self.data[16:])
+           # return str(self.data[16:])
+            return str(self.getRawName())
             # return binascii.hexlify(self.data[16:])       <--- returns the hex as a string
 
     def hasValidTranspose(self):
@@ -401,7 +429,7 @@ class Patch(object):
 
     def hasASCIIname(self):
         #return all(ord(c) < 128 for c in str(self.data[16:]))
-        if all(Utils.safe_ord(c) < 128 for c in str(self.data[16:])):       #  < 7f
+        if all(Utils.safe_ord(c) < 128 for c in str(self.getRawName())):       #  < 7f
             return True
         else:
             #print binascii.hexlify(self.data[16:])
@@ -413,7 +441,7 @@ class Patch(object):
         if sys.version_info >= (3,0):
             #   print(str(type(self.raw_endmarker)) + " and " + str(type(self.getValidEndmarker())))
           #  print(str(type(self.data[16:])))
-            if all(b != 247 for b in self.data[16:]):       #  != F7 
+            if all(b != 247 for b in self.getRawName()):       #  != F7 
                 
                 for operator in self:
                     if operator.hasFloatingEndMarker():
@@ -426,7 +454,7 @@ class Patch(object):
 
         else:
             #return all(ord(c) < 128 for c in str(self.data[16:]))
-            if all(Utils.safe_ord(c) != 247 for c in str(self.data[16:])):       #  != F7
+            if all(Utils.safe_ord(c) != 247 for c in str(self.getRawName())):       #  != F7
                 for operator in self:
                     if operator.hasFloatingEndMarker():
                         return True
@@ -501,6 +529,9 @@ class SysEx(object):
         return Synth.yamaha_dx7
 
 
+    def get(self):
+        return self
+
     # IN: .syx binary or list of 32 patches
     def __init__(self, data):  
 
@@ -512,7 +543,10 @@ class SysEx(object):
             # Python 2 will get 'str'
             # Python 3 will get 'bytes'
             
-            assert(len(data) == 4104)
+
+            assert (len(data) == raw_sysex_data_len), "Expected %d bytes, got: %d"%(raw_sysex_data_len, len(data))
+
+           # assert (len(data) == 4104)
 
             #try:
             #    assert(len(data) == 4104)
@@ -521,9 +555,9 @@ class SysEx(object):
                 #raise
             #    raise AssertionError("Expected .syx data size: 4104 bytes (got %d bytes)"%(len(data)))
 
-            self.raw_header = data[0:6]
-            self.raw_checksum = data[4102]
-            self.raw_endmarker = data[4103]
+            self.raw_header = data[0:sysex_header_len]
+            self.raw_checksum = data[raw_sysex_data_len - 2]
+            self.raw_endmarker = data[raw_sysex_data_len - 1]
 
            # try:
            #     assert(data[0:6] == self.getValidHeader())
@@ -535,16 +569,17 @@ class SysEx(object):
  
             # The following should output 'f04300092000'
             #print binascii.hexlify(self.getValidHeader())
- 
+
+
             
-            i2 = 6
-            for i1 in range(32):
-                self.patches.append(Patch(data[i2:(i2 + 128)], i1))
-                i2 += 128
+            i2 = sysex_header_len
+            for i1 in range(sysex_patch_count):
+                self.patches.append(Patch(data[i2:(i2 + raw_patch_data_len)], i1))
+                i2 += raw_patch_data_len
 
         elif type(data) is list:
 
-            assert(len(data) == 32)
+            assert(len(data) == sysex_patch_count)
             #self.patches = copy.copy(data)   #copy.deepcopy(data)
             
             self.patches = list(data)

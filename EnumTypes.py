@@ -3,7 +3,7 @@
 # $ pip install enum34
 #
 
-#import yamahadx7_syx
+
 import Settings
 from enum import Enum 
 
@@ -11,12 +11,20 @@ class Synth(Enum):
     yamaha_dx7 = "Yamaha DX7"
     roland_jx8p = "Roland JX-8P"
     yamaha_tx802 = "Yamaha TX802"
+    yamaha_tx81z = "Yamaha TX81z"
  
+
+class FileType(Enum):
+    # Sysex consists of multiple patches
+    sysex = Settings.sysex_file_extension
+    # Single patch
+    patch = Settings.patch_file_extension
 
 
 class Bank(Enum):
-    sysex = Settings.sysex_file_extension
-    patch = Settings.patch_file_extension
+    voice = "voice"
+    performance = "performance"
+
 
 
 class VerifiableField(Enum):
